@@ -1,15 +1,12 @@
-import express, { Request, Response, NextFunction } from "express";
-import { handleConversation } from "../controllers/tokenController";
-import authMiddleware from "../middlewares/authMiddleware";
+import express from 'express';
+import { getTokens, getToken, registerToken } from '../controllers/tokenController';
 
 const router = express.Router();
 
-router.post("/:tokenId/conversation", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await handleConversation(req, res); 
-    } catch (error) {
-        next(error); 
-    }
-});
+router.get('/', getTokens);
+
+router.get('/:id', getToken);
+
+router.post('/register', registerToken);
 
 export default router;
