@@ -9,7 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
     "next": "15.1.6",
+    "pino": "^9.6.0",
     "privy": "^0.4.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
