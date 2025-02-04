@@ -59,7 +59,7 @@ export class PrivyService {
    */
   async getUserFromIdentityToken(req: NextApiRequest): Promise<any> {
     try {
-      const idToken = req.cookies['idToken'];
+      const idToken = req.cookies['privy-id-token'];
       if (!idToken) {
         throw new Error("No valid idToken cookie found.");
       }
