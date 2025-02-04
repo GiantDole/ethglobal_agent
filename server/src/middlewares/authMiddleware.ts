@@ -17,8 +17,8 @@ const client = jwksClient({
 // Function to retrieve the signing key from JWKS endpoint
 const getKey = (header: any, callback: any) => {
   client.getSigningKey(header.kid, (err, key) => {
-    if (err) {
-      callback(err, null);
+    if (err || !key) {
+      callback(err || new Error('Unable to retrieve signing key'), null);
     } else {
       const signingKey = key.getPublicKey();
       callback(null, signingKey);
