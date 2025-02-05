@@ -1,23 +1,22 @@
 import { Request, Response } from "express";
 import {
-  createToken,
-  getTokenById,
-  getAllTokens,
-} from "../services/tokenService";
+  getAllProjects,
+  getProjectById,
+} from "../services/projectService";
 
-export const getTokens = async (req: Request, res: Response) => {
+export const getProjects = async (req: Request, res: Response) => {
   try {
-    const tokens = await getAllTokens();
+    const tokens = await getAllProjects();
     res.status(200).json(tokens);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch tokens" });
   }
 };
 
-export const getToken = async (req: Request, res: Response) => {
+export const getProject = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const token = await getTokenById(id);
+    const token = await getProjectById(id);
     if (!token) {
       res.status(404).json({ error: "Token not found" });
       return;
@@ -28,6 +27,7 @@ export const getToken = async (req: Request, res: Response) => {
   }
 };
 
+/*
 export const registerToken = async (req: Request, res: Response) => {
   const { name, symbol, supply } = req.body;
 
@@ -43,3 +43,4 @@ export const registerToken = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to register token" });
   }
 };
+*/

@@ -25,7 +25,7 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
 
     // Instantiate the PrivyService.
     const privyService = new (require('../services/privyService').PrivyService)({ appId, verificationKey });
-    
+
     // Verify the access token provided in the request.
     const authTokenClaims = await privyService.verifyAccessToken(req);
     console.log(authTokenClaims);
@@ -46,7 +46,7 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
     logger.info({ user: userInfo }, "Register: User session successfully registered.");
 
     // Respond with a static question.
-    return res.status(200).json({ question: 'What is your first question?' });
+    return res.status(200).json({ message: 'User registered successfully' });
   } catch (error) {
     logger.error(error, "Error in registerUser controller:");
     return res.status(500).json({ message: 'Internal Server Error' });
