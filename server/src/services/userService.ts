@@ -1,9 +1,16 @@
 import redis from '../database/redis';
 
-interface SessionData {
+interface ProjectSession {
   history: Array<{ question: string; answer: string }>;
   final: boolean;
   access: boolean;
+}
+
+interface SessionData {
+  startedAt: Date;
+  projects: {
+    [projectId: string]: ProjectSession;
+  };
 }
 
 /**
@@ -12,12 +19,11 @@ interface SessionData {
  */
 export const registerSession = async (userId: string): Promise<void> => {
   const sessionData: SessionData = {
-    history: [],
-    final: false,
-    access: false,
+    startedAt: new Date(),
+    projects: {},
   };
 
   const sessionKey = `session:${userId}`;
   // Set session with an expiry of 3600 seconds (60 minutes)
-  await redis.set(sessionKey, JSON.stringify(sessionData), "EX", 60 * 60);
+  await redis.set(sessionKey, JSON.stringify(sessionData), "EX", 180 * 60);
 }; 

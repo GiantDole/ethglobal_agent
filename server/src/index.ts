@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import userRoutes from './routes/userRoutes';
 import cookieParser from 'cookie-parser';
 import projectRoutes from './routes/projectRoutes';
+import interactionRoutes from './routes/interactionRoutes';
 
 dotenv.config();
 
@@ -20,7 +21,8 @@ app.get('/', (req: Request, res: Response) => {
 
 // Mount user routes on the "/api" path.
 app.use('/api/user', userRoutes);
-app.use('/api/project', projectRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/interaction', interactionRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

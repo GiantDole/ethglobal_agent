@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import redis from '../database/redis';
 import jwt from 'jsonwebtoken';
 
-export const checkSession = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const sessionMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   // Use an existing cookie field, "privy-token", instead of a separate "userId"
   const token = req.cookies?.['privy-token'];
   if (!token) {
