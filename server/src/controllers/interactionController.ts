@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { processConversation } from '../services/bouncerService';
+import { processConversation } from '../services/interactionService';
 
 export const handleConversation = async (req: Request, res: Response) => {
   const { tokenId } = req.params;

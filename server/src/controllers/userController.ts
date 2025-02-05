@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { registerSession } from '../services/userService';
+import { createUserWithAccounts, registerSession, userExistsWithPrivyId } from '../services/userService';
 import logger from "../config/logger";
 
 /**
@@ -28,11 +28,9 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
 
     // Verify the access token provided in the request.
     const authTokenClaims = await privyService.verifyAccessToken(req);
-    console.log(authTokenClaims);
 
     // Retrieve user information using the identity token.
     const userInfo = await privyService.getUserFromIdentityToken(req);
-    console.log(userInfo);
 
     // Extract user id from the token claims and/or user information.
     const userId = authTokenClaims.sub || userInfo.id;
@@ -41,9 +39,15 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
       return res.status(400).json({ message: 'User id not found in token' });
     }
 
-    // Register or reset the user session (e.g., in Redis).
+    // Register or reset the user session in redis using Privy user id
     await registerSession(userId);
-    logger.info({ user: userInfo }, "Register: User session successfully registered.");
+    logger.info({ user: userId, wallet: userInfo.wallet }, "Register: User session successfully registered.");
+
+    // Create user in Supabase if they don't exist
+    const userExists = await userExistsWithPrivyId(userId);
+    if (!userExists) {
+      await createUserWithAccounts(userInfo);
+    }
 
     // Respond with a static question.
     return res.status(200).json({ message: 'User registered successfully' });

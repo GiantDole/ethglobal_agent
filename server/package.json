@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@privy-io/server-auth": "^1.18.4",
+    "@supabase/supabase-js": "^2.48.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "ioredis": "^5.4.2",
+    "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.1.0",
     "next": "^15.1.6",
     "pino": "^9.6.0",
