@@ -10,7 +10,7 @@
 All endpoints in this backend are prefixed with `/api`.
 
 ### 1. **User Registration**
-**Endpoint:** `POST /api/register`
+**Endpoint:** `POST /api/user/register`
 
 **Description:**  
 Registers a new or existing user that has logged in via [Privy](https://www.privy.io/). This endpoint:
@@ -20,7 +20,7 @@ Registers a new or existing user that has logged in via [Privy](https://www.priv
   - Stores (or updates) the user data in Supabase.
 
 **Authentication:**  
-- Requires a valid `privy-token` and `idToken` cookie).
+- Requires a valid `privy-token` and `idToken` cookie.
 
 **Request Body:**  
 No request body; the endpoint relies on cookies.
@@ -146,9 +146,8 @@ Stores basic user information. The `wallet_address` may be null if not relevant 
 - **name** (text)  
 - **author** (text)  
 - **short_description** (text)  
-- **evm_token_address** (text)  
-- **created_at** (timestamp, defaults to current timestamp)  
-- **updated_at** (timestamp, can be updated on edits)  
+- **token_address** (text)  
+- **created_at** (timestamp, defaults to current timestamp) 
 - Additional metadata fields as needed (e.g., `status`, `category`, etc.)
 
 **Description:**  
