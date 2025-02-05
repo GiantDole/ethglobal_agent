@@ -1,11 +1,13 @@
 // Components
 import { ConnectWallet } from "./ConnectWallet";
-
+import Link from "next/link";
 export const Header = () => {
   return (
     <div className="border px-4 py-2 flex justify-between items-center bg-gray-200">
       <div className="flex gap-8 items-center">
-        <h1 className="text-2xl font-bold">bouncer.ai</h1>
+        <h1 className="text-2xl font-bold">
+          <Link href="/">bouncer.ai</Link>  
+        </h1>
         <div>
           <ul className="flex gap-4">
             <li>
