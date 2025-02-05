@@ -3,7 +3,7 @@ import supabaseClient from '../database/supabase';
 export const getAllProjects = async () => {
     const { data, error } = await supabaseClient
         .from('Projects')
-        .select('id, name, author, short_description, token_ticker');
+        .select('id, name, author, short_description, token_ticker, status');
 
     if (error) throw new Error(error.message);
     return data;

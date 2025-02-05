@@ -83,6 +83,7 @@ export type Database = {
           long_description: string
           name: string
           short_description: string
+          status: number
           token_address: string | null
           token_ticker: string | null
         }
@@ -93,6 +94,7 @@ export type Database = {
           long_description: string
           name: string
           short_description: string
+          status?: number
           token_address?: string | null
           token_ticker?: string | null
         }
@@ -103,6 +105,7 @@ export type Database = {
           long_description?: string
           name?: string
           short_description?: string
+          status?: number
           token_address?: string | null
           token_ticker?: string | null
         }
