@@ -18,32 +18,27 @@ Registers a new or existing user that has logged in via [Privy](https://www.priv
   - Retrieves the user's profile data from the identity token (stored in the `idToken` cookie).
   - Creates or resets a session in Redis.
   - Stores (or updates) the user data in Supabase.
-  - Returns a first question or prompt (e.g., "What is your first question?").
 
 **Authentication:**  
-- Requires a valid `privy-token` cookie (and optionally an `idToken` cookie).
+- Requires a valid `privy-token` and `idToken` cookie).
 
 **Request Body:**  
 No request body; the endpoint relies on cookies.
 
 **Response Example (HTTP 200):**  
-```json
-{
-  "question": "What is your first question?"
-}
-```
+No relevenat response.
 
 **Error Responses (HTTP 4xx/5xx):**  
 Appropriate error messages if authentication fails or a server error occurs.
 
 ### 2. **List All Projects**
-**Endpoint:** `GET /api/projects`
+**Endpoint:** `GET /api/projects/`
 
 **Description:**  
 Retrieves a list of all existing projects from the Launchpad along with metadata such as project name, status, and description.
 
 **Authentication:**  
-Optional, if projects are public. Otherwise, apply JWT/Privy-based authentication.
+Not required. Projects are public.
 
 **Request Example:**  
 ```
@@ -63,13 +58,13 @@ GET /api/projects
     "id": "456",
     "name": "Project Beta",
     "description": "An advanced blockchain-based web app.",
-    "status": "development"
+    "status": "closed"
   }
 ]
 ```
 
 ### 3. **Get Project Info**
-**Endpoint:** `GET /api/project/:id`
+**Endpoint:** `GET /api/projects/:id`
 
 **Description:**  
 Retrieves metadata and high-level status for a specific project identified by its `id`.
@@ -79,7 +74,7 @@ Retrieves metadata and high-level status for a specific project identified by it
 
 **Example:**  
 ```
-GET /api/project/123
+GET /api/projects/123
 ```
 
 **Response Example (HTTP 200):**  
@@ -94,7 +89,7 @@ GET /api/project/123
 ```
 
 ### 4. **Project Interaction**
-**Endpoint:** `POST /api/project/:id/interaction`
+**Endpoint:** `POST /api/interaction/:id`
 
 **Description:**  
 Handles interactions with a project's bouncer (i.e., a question-based flow). It can:
@@ -107,7 +102,7 @@ Handles interactions with a project's bouncer (i.e., a question-based flow). It 
 **Request Body Example:**  
 ```json
 {
-  "previousAnswer": "I am interested in joining this project."
+  "answer": "I invest fully degenerate."
 }
 ```
 
@@ -128,18 +123,6 @@ Handles interactions with a project's bouncer (i.e., a question-based flow). It 
 
 3. **Logout/Session Invalidation**
    - `POST /api/logout` – Clears the user's session in Redis and optionally removes authentication cookies.
-
-## General Notes and Recommendations
-
-- **Authentication Flow:** Use Privy cookies (`privy-token` and `idToken`) for authentication. Additional routes can be protected using JWT middleware if needed.
-
-- **Data Storage:** User data is stored/updated in Supabase while session data is maintained in Redis. Additional user progress can also be stored in Supabase.
-
-- **Logging and Error Handling:**  
-  Use [Pino logger](https://getpino.io/) for logging. Make sure to handle errors gracefully using try/catch blocks to avoid server crashes.
-
-- **Next Steps:**  
-  Flesh out each endpoint's logic and validations. Integrate the bouncer flow in `/api/project/:id/interaction` and consider adding endpoints for user profile and logout as the project evolves.
 
 ## Database Schema
 
