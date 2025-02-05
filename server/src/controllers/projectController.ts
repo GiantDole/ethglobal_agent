@@ -9,21 +9,21 @@ export const getProjects = async (req: Request, res: Response) => {
     const tokens = await getAllProjects();
     res.status(200).json(tokens);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch tokens" });
+    res.status(500).json({ error: "Failed to fetch projects" });
   }
 };
 
 export const getProject = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const token = await getProjectById(id);
+    const token = await getProjectById(parseInt(id));
     if (!token) {
-      res.status(404).json({ error: "Token not found" });
+      res.status(404).json({ error: "Project not found" });
       return;
     }
     res.status(200).json(token);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch token" });
+    res.status(500).json({ error: "Failed to fetch project" });
   }
 };
 

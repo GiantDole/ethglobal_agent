@@ -75,6 +75,39 @@ export type Database = {
           },
         ]
       }
+      Projects: {
+        Row: {
+          author: string
+          created_at: string
+          id: number
+          long_description: string
+          name: string
+          short_description: string
+          token_address: string | null
+          token_ticker: string | null
+        }
+        Insert: {
+          author: string
+          created_at?: string
+          id?: number
+          long_description: string
+          name: string
+          short_description: string
+          token_address?: string | null
+          token_ticker?: string | null
+        }
+        Update: {
+          author?: string
+          created_at?: string
+          id?: number
+          long_description?: string
+          name?: string
+          short_description?: string
+          token_address?: string | null
+          token_ticker?: string | null
+        }
+        Relationships: []
+      }
       User: {
         Row: {
           id: number

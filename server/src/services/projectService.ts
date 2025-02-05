@@ -1,13 +1,21 @@
 import supabaseClient from '../database/supabase';
 
 export const getAllProjects = async () => {
-    const { data, error } = await supabaseClient.from('tokens').select('*');
+    const { data, error } = await supabaseClient
+        .from('Projects')
+        .select('id, name, author, short_description, token_ticker');
+
     if (error) throw new Error(error.message);
     return data;
 };
 
-export const getProjectById = async (id: string) => {
-    const { data, error } = await supabaseClient.from('tokens').select('*').eq('id', id).single();
+export const getProjectById = async (id: number) => {
+    const { data, error } = await supabaseClient
+        .from('Projects')
+        .select('*')
+        .eq('id', id)
+        .single();
+
     if (error) throw new Error(error.message);
     return data;
 };
