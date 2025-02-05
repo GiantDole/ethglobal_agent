@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { createUserWithAccounts, registerSession, userExistsWithPrivyId } from '../services/userService';
 import logger from "../config/logger";
+import { privyService } from '../services/privyServiceSingleton';
 
 /**
  * Controller to register a new or existing user.
@@ -16,6 +17,7 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
     if(!req.cookies) {
       return res.status(401).json({ message: 'Unauthorized: Missing cookies' });
     }
+    /*
     const appId = process.env.PRIVY_APP_ID;
     const verificationKey = process.env.PRIVY_VERIFICATION_KEY;
     if (!appId || !verificationKey) {
@@ -25,7 +27,7 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
 
     // Instantiate the PrivyService.
     const privyService = new (require('../services/privyService').PrivyService)({ appId, verificationKey });
-
+    */
     // Verify the access token provided in the request.
     const authTokenClaims = await privyService.verifyAccessToken(req);
 
@@ -33,7 +35,7 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
     const userInfo = await privyService.getUserFromIdentityToken(req);
 
     // Extract user id from the token claims and/or user information.
-    const userId = authTokenClaims.sub || userInfo.id;
+    const userId = userInfo.id;
     if (!userId) {
       logger.warn({ authTokenClaims, userInfo }, "Register: No user id found in token.");
       return res.status(400).json({ message: 'User id not found in token' });

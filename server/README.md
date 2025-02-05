@@ -113,6 +113,27 @@ Handles interactions with a project's bouncer (i.e., a question-based flow). It 
 }
 ```
 
+### 5. **Get Signature for Project**
+**Endpoint:** `POST /api/interaction/:id/signature`
+
+**Description:**
+Gets the signature for a project after interaction was successful.
+
+
+**Path Parameter:**
+- `id` – The unique project identifier.
+
+**Response Example (HTTP 200):**
+```json
+{
+  "signature": "0x1234567890abcdef"
+}
+```
+
+**Error Responses (HTTP 4xx/5xx):**
+Appropriate error messages if the user has not interacted or if the interaction was not successful.
+
+
 ## Potential Additional Endpoints
 
 1. **Health Check**

@@ -1,4 +1,6 @@
+import redis from '../database/redis';
 import supabaseClient from '../database/supabase';
+import { ConversationState } from './interactionService';
 
 export const getAllProjects = async () => {
     const { data, error } = await supabaseClient
@@ -18,6 +20,20 @@ export const getProjectById = async (id: number) => {
 
     if (error) throw new Error(error.message);
     return data;
+};
+
+export const getProjectConversationHistory = async ({
+  projectId,
+  userId,
+}: {
+  projectId: string;
+  userId: string;
+}): Promise<ConversationState | null> => {
+  const sessionData = await redis.get(`session:${userId}`);
+  if (!sessionData) return null;
+  
+  const session = JSON.parse(sessionData);
+  return session.projects[projectId] || null;
 };
 
 /*

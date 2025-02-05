@@ -1,6 +1,8 @@
 export interface ConversationState {
-    conversationId: string;
-    previousMessages: string[];
+    // Align with ProjectSession from userService
+    history: Array<{ question: string; answer: string }>;
+    final: boolean;
+    access: boolean;
   }
   
   export interface BouncerResponse {
@@ -13,13 +15,15 @@ export interface ConversationState {
     userInput: string,
     conversationState: ConversationState | null
   ): Promise<BouncerResponse> => {
-    const nextMessage = `You said: ${userInput}. Here's the next step.`;
-    let shouldContinue = false;
-    let decision: 'accept' | 'deny' | 'allocation' | 'pending' = 'pending';
+    var nextMessage;
+    if (conversationState) {
+        nextMessage = `You said: ${userInput}. Why are you not degen enough.`;
+    } else {
+        nextMessage = `GM ser. Wen degen?`;
+    }
+    let shouldContinue = true;
+    let decision: 'accept' | 'deny' | 'pending' = 'pending';
 
-    decision = 'allocation';
-
-  
   
     return {
       nextMessage,

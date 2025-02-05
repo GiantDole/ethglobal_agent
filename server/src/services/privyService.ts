@@ -10,7 +10,7 @@
  * - [Querying a Single User](https://docs.privy.io/guide/server/users/get)
  */
 
-import type { NextApiRequest } from 'next';
+import { Request } from 'express';
 import { PrivyClient, AuthTokenClaims } from '@privy-io/server-auth';
 
 export interface PrivyServiceConfig {
@@ -35,7 +35,7 @@ export class PrivyService {
    *
    * @see [Access Token Verification](https://docs.privy.io/guide/server/authorization/verification)
    */
-  async verifyAccessToken(req: NextApiRequest): Promise<AuthTokenClaims> {
+  async verifyAccessToken(req: Request): Promise<AuthTokenClaims> {
     try {
       const accessToken = req.cookies['privy-token'];
       if (!accessToken) {
@@ -57,7 +57,7 @@ export class PrivyService {
    *
    * @see [Querying a Single User](https://docs.privy.io/guide/server/users/get)
    */
-  async getUserFromIdentityToken(req: NextApiRequest): Promise<any> {
+  async getUserFromIdentityToken(req: Request): Promise<any> {
     try {
       const idToken = req.cookies['privy-id-token'];
       if (!idToken) {
@@ -67,6 +67,15 @@ export class PrivyService {
       return user;
     } catch (error) {
       throw new Error(`Failed to retrieve user from identity token: ${error}`);
+    }
+  }
+
+  async getUserIdFromAccessToken(req: Request): Promise<any> {
+    try {
+      const user = await this.getUserFromIdentityToken(req);
+      return user.id;
+    } catch (error) {
+      throw new Error(`Failed to retrieve user from access token: ${error}`);
     }
   }
 }

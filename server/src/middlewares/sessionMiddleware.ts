@@ -1,19 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import redis from '../database/redis';
-import jwt from 'jsonwebtoken';
+import { privyService } from '../services/privyServiceSingleton';
 
 export const sessionMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   // Use an existing cookie field, "privy-token", instead of a separate "userId"
-  const token = req.cookies?.['privy-token'];
-  if (!token) {
-    res.status(401).json({ message: 'Unauthorized: Missing privy token' });
-    return;
-  }
-
-  // Decode the token without verifying its signature
-  // Note: jwt.decode() is used to extract the payload; we already verified it during /register
-  const decoded = jwt.decode(token);
-  const userId = (decoded && typeof decoded === 'object') ? decoded.sub || decoded.id : null;
+  const userId = await privyService.getUserIdFromAccessToken(req);
   if (!userId) {
     res.status(401).json({ message: 'Unauthorized: Invalid privy token' });
     return;
