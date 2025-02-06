@@ -60,9 +60,6 @@ interface IUniswapV2Router02 {
  *   into a Uniswap liquidity pool.
  */
 contract TokenBondingCurve is ERC20, Ownable {
-    // The agent address whose signatures are required.
-    address public agent;
-
     // A mapping to store the last nonce used for each user.
     mapping(address => uint256) public nonces;
 
@@ -86,6 +83,9 @@ contract TokenBondingCurve is ERC20, Ownable {
     // Uniswap V2 router instance.
     IUniswapV2Router02 public uniswapRouter;
 
+    // Add factory reference
+    TokenBondingCurveFactory public immutable factory;
+
     // ========== Events ==========
     event TokensBought(
         address indexed buyer,
@@ -100,7 +100,6 @@ contract TokenBondingCurve is ERC20, Ownable {
         uint256 refundUsd,
         uint256 ethRefunded
     );
-    event AgentUpdated(address indexed oldAgent, address indexed newAgent);
     event LiquidityDeployed(uint256 tokenAmount, uint256 ethAmount, uint256 liquidity);
 
     /**
@@ -110,7 +109,7 @@ contract TokenBondingCurve is ERC20, Ownable {
      * @param _totalSupplyTokens The total supply (in whole tokens). Tokens will be scaled by decimals().
      * @param _basePriceUsd The base USD price per token (8 decimals, e.g., 100e8 for $100).
      * @param _slopeUsd The USD increase per token sold (8 decimals, e.g., 1e8 for a $1 increment).
-     * @param _agent The agent address whose signatures are required.
+     * @param _factory The factory address.
      * @param _priceFeed The address of the Chainlink ETH/USD price feed.
      * @param _targetMarketCapUsd The target market cap (in USD, 8 decimals) that must be reached before liquidity can be deployed.
      */
@@ -120,17 +119,17 @@ contract TokenBondingCurve is ERC20, Ownable {
         uint256 _totalSupplyTokens,
         uint256 _basePriceUsd,
         uint256 _slopeUsd,
-        address _agent,
+        address _factory,
         address _priceFeed,
         uint256 _targetMarketCapUsd
     )
         ERC20(name_, symbol_) Ownable(msg.sender)
     {
-        require(_agent != address(0), "Agent address cannot be zero");
+        require(_factory != address(0), "Factory address cannot be zero");
+        factory = TokenBondingCurveFactory(_factory);
         require(_priceFeed != address(0), "Price feed address cannot be zero");
         require(_targetMarketCapUsd > 0, "Target market cap must be > 0");
 
-        agent = _agent;
         basePriceUsd = _basePriceUsd;
         slopeUsd = _slopeUsd;
         totalSupplyTokens = _totalSupplyTokens;
@@ -189,6 +188,7 @@ contract TokenBondingCurve is ERC20, Ownable {
 
         // Construct the message hash and recover signer.
         bytes32 messageHash = keccak256(abi.encode(msg.sender, nonce, address(this), tokenAllocation));
+        address agent = factory.getAgent();
         address recovered = ECDSA.recover(MessageHashUtils.toEthSignedMessageHash(messageHash), signature);
         require(recovered == agent, "Invalid agent signature");
 
@@ -276,18 +276,6 @@ contract TokenBondingCurve is ERC20, Ownable {
         require(successRefund, "ETH refund failed");
 
         emit TokensSold(msg.sender, numTokens, refundUsd, refundEth);
-    }
-
-    /**
-     * @notice Update the agent address.
-     * Only callable by the owner.
-     * @param newAgent The new agent address.
-     */
-    function updateAgent(address newAgent) external onlyOwner {
-        require(newAgent != address(0), "New agent cannot be zero address");
-        address oldAgent = agent;
-        agent = newAgent;
-        emit AgentUpdated(oldAgent, newAgent);
     }
 
     /**
