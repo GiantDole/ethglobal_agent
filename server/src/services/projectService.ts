@@ -36,6 +36,14 @@ export const getProjectConversationHistory = async ({
   return session.projects[projectId] || null;
 };
 
+export const setProjectConversationHistory = async (projectId: string, userId: string, conversationHistory: ConversationState) => {
+  const sessionData = await redis.get(`session:${userId}`);
+  if (!sessionData) return null;
+  
+  const session = JSON.parse(sessionData);
+  session.projects[projectId] = conversationHistory;
+};
+
 /*
 export const createToken = async (tokenData: { name: string; symbol: string; supply: number }) => {
     const { data, error } = await supabase.from('tokens').insert([tokenData]).single();

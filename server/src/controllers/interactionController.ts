@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { processConversation } from '../services/interactionService';
-import { getProjectConversationHistory } from '../services/projectService';
+import { setProjectConversationHistory, getProjectConversationHistory } from '../services/projectService';
 import { privyService } from '../services/privyServiceSingleton';
 
 export const handleConversation = async (req: Request, res: Response) => {
@@ -17,6 +17,7 @@ export const handleConversation = async (req: Request, res: Response) => {
   try {
     // Process the conversation
     const result = await processConversation(userInput, conversationHistory);
+    await setProjectConversationHistory(tokenId, userId, result.conversationState);
 
     // Respond with the AI result
     return res.json({
