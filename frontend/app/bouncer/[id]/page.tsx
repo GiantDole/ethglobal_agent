@@ -1,34 +1,40 @@
+'use client';
+
 import React from "react";
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import SpeechInterface from "@/components/ui/SpeechInterface";
+// import { useRouter } from "next/navigation";
+import { getCookie } from "cookies-next";
+// import UserClient from "../../../clients/User";
 
-import SpeechInterface from "@/components/utils/SpeechInterface";
 
-import UserClient from "../../../clients/User";
-const userClient = new UserClient("http://localhost:3000");
+// const userClient = new UserClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
 
-export default async function BouncerPage() {
-  const cookieStore = await cookies();
-  const cookieAuthToken = cookieStore.get("privy-token")?.value;
-  const cookieIdToken = cookieStore.get("privy-id-token")?.value;
+export default function BouncerPage() {
+//   const router = useRouter();
 
-  if (cookieAuthToken) {
-    const res = await userClient.authenticate(cookieAuthToken, cookieIdToken);
-    if (res.status !== 200) {
-      redirect("/");
-    }
-  } else {
-    redirect("/");
-  }
+//   useEffect(() => {
+//     const authenticate = async () => {
+//       const cookieAuthToken = getCookie("privy-token");
+//       const cookieIdToken = getCookie("privy-id-token");
+//       console.log(cookieAuthToken, cookieIdToken);
+//       if (cookieAuthToken) {
+//         const res = await userClient.authenticate(cookieAuthToken.toString(), cookieIdToken?.toString());
+//         console.log(res);
+
+//       } else {
+//         router.push("/");
+//       }
+//     };
+
+//     authenticate();
+//   }, [router]);
+
+//   const cookieAuthToken = getCookie("privy-token");
+//   const cookieIdToken = getCookie("privy-id-token");
 
   return (
     <div>
-      <SpeechInterface
-        cookie={{
-          authToken: cookieAuthToken,
-          idToken: cookieIdToken,
-        }}
-      />
+      <SpeechInterface/>
     </div>
   );
 }

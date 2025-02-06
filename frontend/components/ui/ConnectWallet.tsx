@@ -1,17 +1,25 @@
 "use client";
 import { useLogin, usePrivy } from "@privy-io/react-auth";
-import UserClient from "@/clients/User";
 import { useRouter } from "next/navigation";
+import { getCookie } from "cookies-next";
+import UserClient from "@/clients/User";
+
+const userClient = new UserClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
 
 export const ConnectWallet = () => {
   const router = useRouter();
-  const handleNewUser = () => {
-    console.log("New user is detected. registering user to backend...");
-    // TODO: register user to backend
+
+  // Once the login is successful, register user to backend
+  const handleNewUser = async () => {
+    const cookieAuthToken = getCookie("privy-token");
+    if (cookieAuthToken) {
+      await userClient.authenticate();
+    } else {
+      router.push("/");
+    }
   };
   const {login} = useLogin({
-    onComplete: ({user, isNewUser, wasAlreadyAuthenticated, loginMethod}) => {
-      console.log(JSON.stringify(user))
+    onComplete: ({isNewUser, wasAlreadyAuthenticated}) => {
       if (wasAlreadyAuthenticated) {
         router.push('/');
       } else {
@@ -19,12 +27,9 @@ export const ConnectWallet = () => {
           handleNewUser();
         } 
       }
-      // Any logic you'd like to execute if the user is/becomes authenticated while this
-      // component is mounted
     },
     onError: (error) => {
       console.log(error);
-      // Any logic you'd like to execute after a user exits the login flow or there is an error
     },
   });
   const { user, logout } = usePrivy();
