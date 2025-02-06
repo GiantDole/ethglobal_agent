@@ -1,11 +1,14 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 // Import the Chainlink Aggregator interface for ETH/USD price feed
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+
+using ECDSA for bytes32;
 
 /**
  * @dev Minimal Uniswap V2 Router interface
@@ -57,8 +60,6 @@ interface IUniswapV2Router02 {
  *   into a Uniswap liquidity pool.
  */
 contract TokenBondingCurve is ERC20, Ownable {
-    using ECDSA for bytes32;
-
     // The agent address whose signatures are required.
     address public agent;
 
@@ -122,7 +123,9 @@ contract TokenBondingCurve is ERC20, Ownable {
         address _agent,
         address _priceFeed,
         uint256 _targetMarketCapUsd
-    ) ERC20(name_, symbol_) {
+    )
+        ERC20(name_, symbol_) Ownable(msg.sender)
+    {
         require(_agent != address(0), "Agent address cannot be zero");
         require(_priceFeed != address(0), "Price feed address cannot be zero");
         require(_targetMarketCapUsd > 0, "Target market cap must be > 0");
@@ -184,14 +187,12 @@ contract TokenBondingCurve is ERC20, Ownable {
         require(numTokens <= tokenAllocation, "Cannot buy more than allocation");
         require(nonce > nonces[msg.sender], "Invalid nonce");
 
-        // Reproduce the message hash for signature verification using tokenAllocation.
-        bytes32 messageHash = keccak256(
-            abi.encode(msg.sender, nonce, address(this), tokenAllocation)
-        );
-        address recovered = messageHash.toEthSignedMessageHash().recover(signature);
+        // Construct the message hash and recover signer.
+        bytes32 messageHash = keccak256(abi.encode(msg.sender, nonce, address(this), tokenAllocation));
+        address recovered = ECDSA.recover(MessageHashUtils.toEthSignedMessageHash(messageHash), signature);
         require(recovered == agent, "Invalid agent signature");
 
-        // Update the nonce so the signature cannot be reused.
+        // Update nonce so signatures cannot be replayed.
         nonces[msg.sender] = nonce;
 
         // Calculate the cost in USD (8 decimals).
@@ -403,22 +404,16 @@ contract TokenBondingCurve is ERC20, Ownable {
      *         Until liquidity is deployed, transfers between externally owned accounts are locked.
      *         Only transfers from the contract (buy) or to the contract (sell), minting or burning are allowed.
      */
-    function _beforeTokenTransfer(
+    function _update(
         address from,
         address to,
-        uint256 amount
+        uint256 value
     ) internal override {
-        super._beforeTokenTransfer(from, to, amount);
-
-        // Allow minting and burning.
-        if (from == address(0) || to == address(0)) {
-            return;
-        }
-
         // Until liquidity is deployed, only allow transfers if either the sender or receiver is the contract.
-        if (!liquidityDeployed) {
+        if (!liquidityDeployed && from != address(this) && to != address(this)) {
             require(from == address(this) || to == address(this), "Token transfers are locked until liquidity is deployed");
         }
+        super._update(from, to, value);
     }
 
     /// @notice Allow the contract to receive ETH.
