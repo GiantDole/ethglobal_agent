@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 // Import the Chainlink Aggregator interface for ETH/USD price feed
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "./TokenBondingCurveFactory.sol";
 
 using ECDSA for bytes32;
 

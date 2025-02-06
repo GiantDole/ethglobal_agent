@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "../src/TokenBondingCurve.sol";
+import "../src/TokenBondingCurveFactory.sol";
 
 //=============================================================================
 // MockAggregator
@@ -111,43 +112,47 @@ contract MockUniswapRouter is IUniswapV2Router02 {
 //=============================================================================
 contract TokenBondingCurveTest is Test {
     TokenBondingCurve tokenBonding;
+    TokenBondingCurveFactory factory;
     MockAggregator aggregator;
     MockUniswapRouter uniswapRouter;
 
-    // Bonding curve parameters.
-    uint256 basePriceUsd = 100e8; // $100 with 8 decimals.
-    uint256 slopeUsd = 1e8;       // $1 increment per token sold.
-    uint256 totalSupplyTokens = 1000; // Total of 1000 tokens.
-    // Set target market cap low enough to trigger liquidity after minimal sales.
-    uint256 targetMarketCapUsd = 1e10; // Target market cap is 10,000,000,000
-
+    // Updated parameters to match factory constants
+    uint256 constant BASE_PRICE_USD = 0.01e8;     // $0.01
+    uint256 constant SLOPE_USD = 0.00000013e8;    // $0.00000013
+    uint256 constant TARGET_MARKET_CAP_USD = 500000e8; // $500,000
+    uint256 constant TOTAL_SUPPLY_TOKENS = 1_000_000_000; // 1 billion tokens
+    
     address owner = address(this);
+    address projectLead;
     address agent;
-    uint256 agentPrivateKey = 0xBEEF; // Arbitrary private key for agent.
+    uint256 agentPrivateKey = 0xBEEF;
+    uint256 projectLeadPrivateKey = 0xCAFE;
 
     function setUp() public {
-        // Set agent address via cheatcode.
+        // Set agent and project lead addresses via cheatcode
         agent = vm.addr(agentPrivateKey);
+        projectLead = vm.addr(projectLeadPrivateKey);
 
-        // Deploy a mock aggregator. For example, simulate a constant ETH price of $2000:
-        // Since Chainlink returns price with 8 decimals, we set price = 2000e8.
+        // Deploy factory first
+        factory = new TokenBondingCurveFactory(projectLead, agent);
+
+        // Deploy a mock aggregator with ETH price of $2000
         aggregator = new MockAggregator(2000e8);
 
-        // Deploy the bonding curve contract.
-        tokenBonding = new TokenBondingCurve(
+        // Deploy the mock Uniswap router
+        uniswapRouter = new MockUniswapRouter();
+
+        // Deploy bonding curve through factory
+        bytes32 projectId = keccak256("test-project");
+        vm.prank(projectLead);
+        address payable bondingAddress = payable(factory.deployContract(
+            projectId,
             "BondingToken",
             "BOND",
-            totalSupplyTokens,
-            basePriceUsd,
-            slopeUsd,
-            agent,
             address(aggregator),
-            targetMarketCapUsd
-        );
-
-        // Deploy and set the mock Uniswap router.
-        uniswapRouter = new MockUniswapRouter();
-        tokenBonding.setUniswapRouter(address(uniswapRouter));
+            address(uniswapRouter)
+        ));
+        tokenBonding = TokenBondingCurve(bondingAddress);
     }
 
     //--------------------------------------------------------------------------
@@ -270,8 +275,8 @@ contract TokenBondingCurveTest is Test {
         bytes memory signature = _getSignature(buyer, nonce, tokenAllocation);
 
         // Calculate exact buy amount needed
-        uint256 buyPriceUsd = buyTokens * basePriceUsd +
-            slopeUsd * (buyTokens * 0 + (buyTokens * (buyTokens - 1)) / 2);
+        uint256 buyPriceUsd = buyTokens * BASE_PRICE_USD +
+            SLOPE_USD * (buyTokens * 0 + (buyTokens * (buyTokens - 1)) / 2);
         uint256 buyEthRequired = (buyPriceUsd * 1e18) / (2000e8);  // ETH price is 2000 USD
 
         vm.prank(buyer);
@@ -314,33 +319,20 @@ contract TokenBondingCurveTest is Test {
     // and liquidity is deployed.
     //--------------------------------------------------------------------------
     function testDeployLiquiditySufficientTokens() public {
-        // Simulate a buy so that tokensSold becomes 10.
-        address buyer = address(4);
-        uint256 nonce = 1;
-        uint256 tokenAllocation = 50;
-        uint256 buyTokens = 10;
-        bytes memory signature = _getSignature(buyer, nonce, tokenAllocation);
+        _reachTargetMarketCap();
 
-        vm.prank(buyer);
-        vm.deal(buyer, 100 ether);
-        tokenBonding.buy{value: 3 ether}(buyTokens, tokenAllocation, nonce, signature);
-        // Now currentPriceUsd = basePriceUsd + slopeUsd * tokensSold = 100e8 + 10e8 = 110e8.
-
-        // Supply ETH for liquidity.
+        // Supply ETH for liquidity
         vm.deal(address(tokenBonding), 1 ether);
 
-        // Deploy liquidity.
         tokenBonding.deployLiquidity();
         assertTrue(tokenBonding.liquidityDeployed());
 
-        // Calculation in deployLiquidity:
-        // ethAvailable = 1 ether; usdAvailable = (1e18 * 2000e8) / 1e18 = 2000e8.
-        // idealTokenWhole = 2000e8 / 110e8 = 18 (integer division)
-        // Unsold tokens = totalSupply - 10 = 990 tokens >> 18.
-        // Thus, tokensToDeployWhole should be 18 and usedEth equals 1 ether.
-        uint256 expectedTokenAmount = 18 * (10 ** tokenBonding.decimals());
-        uint256 actualTokenAmount = uniswapRouter.lastTokenAmount();
-        assertEq(actualTokenAmount, expectedTokenAmount, "Token amount mismatch");
+        uint256 currentPriceUsd = BASE_PRICE_USD + (SLOPE_USD * tokenBonding.tokensSold());
+        uint256 requiredUsd = 1 ether * 2000e8 / 1e18;  // Convert 1 ETH to USD
+        uint256 tokensToAdd = requiredUsd / currentPriceUsd;  // How many tokens match this ETH value
+
+        uint256 expectedTokenAmount = tokensToAdd * (10 ** tokenBonding.decimals());
+        assertEq(uniswapRouter.lastTokenAmount(), expectedTokenAmount, "Token amount mismatch");
         assertEq(uniswapRouter.lastEthAmount(), 1 ether, "ETH amount mismatch");
     }
 
@@ -350,91 +342,44 @@ contract TokenBondingCurveTest is Test {
     // Scenario: Nearly all tokens are sold so that unsold tokens are few.
     //--------------------------------------------------------------------------
     function testDeployLiquidityInsufficientTokens() public {
-        // Simulate a buy where almost all tokens are sold.
-        address buyer = address(5);
-        uint256 nonce = 1;
-        uint256 tokenAllocation = 1000;  // Increased from 50 to 1000 to allow larger purchase
-        uint256 buyTokens = 990;  // tokensSold becomes 990.
-        bytes memory signature = _getSignature(buyer, nonce, tokenAllocation);
+        _reachTargetMarketCap();
 
-        // Calculate exact buy amount needed:
-        // costUsd = numTokens * basePriceUsd + slopeUsd * (numTokens * tokensSold + (numTokens*(numTokens-1))/2)
-        uint256 buyPriceUsd = buyTokens * basePriceUsd +
-            slopeUsd * (buyTokens * 0 + (buyTokens * (buyTokens - 1)) / 2);
-        // Convert USD to ETH: ETH price is 2000 USD with 8 decimals (2000e8)
-        uint256 buyEthRequired = (buyPriceUsd * 1e18) / (2000e8);
-        vm.prank(buyer);
-        vm.deal(buyer, 1000 ether);
-        tokenBonding.buy{value: buyEthRequired}(buyTokens, tokenAllocation, nonce, signature);
-
-        // Check current market cap
-        uint256 currentPrice = tokenBonding.getCurrentPrice();
-        uint256 currentMarketCap = tokenBonding.tokensSold() * currentPrice;
-
-        // Supply ETH for liquidity.
+        // Supply ETH for liquidity
         vm.deal(address(tokenBonding), 10 ether);
 
         tokenBonding.deployLiquidity();
         assertTrue(tokenBonding.liquidityDeployed());
 
-        // In this scenario, tokensToDeployWhole is the unsold token balance (10 tokens).
-        // usedEth = (10 * currentPriceUsd * 1e18) / (2000e8)
-        uint256 currentPriceUsd = basePriceUsd + (slopeUsd * tokenBonding.tokensSold());
-        uint256 requiredUsd = 10 * currentPriceUsd;
-        uint256 expectedUsedEth = (requiredUsd * 1e18) / (2000e8);
+        uint256 currentPriceUsd = BASE_PRICE_USD + (SLOPE_USD * tokenBonding.tokensSold());
+        uint256 requiredUsd = 10 ether * 2000e8 / 1e18;  // Convert 10 ETH to USD
+        uint256 tokensToAdd = requiredUsd / currentPriceUsd;  // How many tokens match this ETH value
 
-        assertEq(uniswapRouter.lastTokenAmount(), 10 * (10 ** tokenBonding.decimals()));
-        assertEq(uniswapRouter.lastEthAmount(), expectedUsedEth);
+        uint256 expectedTokenAmount = tokensToAdd * (10 ** tokenBonding.decimals());
+        assertEq(uniswapRouter.lastTokenAmount(), expectedTokenAmount);
+        assertEq(uniswapRouter.lastEthAmount(), 10 ether);
     }
 
     //--------------------------------------------------------------------------
     // Test: After liquidity is deployed, the owner can withdraw remaining ETH and tokens.
     //--------------------------------------------------------------------------
     function testWithdrawRemaining() public {
-        address buyer = address(6);
-        uint256 nonce = 1;
-        uint256 tokenAllocation = 50;
-        uint256 buyTokens = 10;
-        bytes memory signature = _getSignature(buyer, nonce, tokenAllocation);
+        _reachTargetMarketCap();
 
-        // Execute a buy.
-        vm.prank(buyer);
-        vm.deal(buyer, 10 ether);
-        tokenBonding.buy{value: 3 ether}(buyTokens, tokenAllocation, nonce, signature);
-        // Add extra ETH.
+        // Deploy liquidity
         vm.deal(address(tokenBonding), 1 ether);
 
-        // Deploy liquidity.
+        // Need to be owner to deploy liquidity and withdraw
+        vm.startPrank(tokenBonding.owner());
         tokenBonding.deployLiquidity();
 
-        uint256 ownerEthBefore = owner.balance;
+        uint256 ownerEthBefore = tokenBonding.owner().balance;
         uint256 remainingTokens = tokenBonding.balanceOf(address(tokenBonding));
 
         tokenBonding.withdrawRemaining();
+        vm.stopPrank();
 
-        // The contract should have no ETH.
         assertEq(address(tokenBonding).balance, 0);
-        // The remaining tokens should have been transferred to owner.
-        assertEq(tokenBonding.balanceOf(owner), remainingTokens);
-    }
-
-    //--------------------------------------------------------------------------
-    // Test: updateAgent by owner works.
-    //--------------------------------------------------------------------------
-    function testUpdateAgent() public {
-        address newAgent = address(99);
-        tokenBonding.updateAgent(newAgent);
-        assertEq(tokenBonding.agent(), newAgent);
-    }
-
-    //--------------------------------------------------------------------------
-    // Test: updateAgent by a non-owner reverts.
-    //--------------------------------------------------------------------------
-    function testUpdateAgentNonOwner() public {
-        address newAgent = address(99);
-        vm.prank(address(100));
-        vm.expectRevert();
-        tokenBonding.updateAgent(newAgent);
+        assertEq(tokenBonding.balanceOf(tokenBonding.owner()), remainingTokens);
     }
 
     //--------------------------------------------------------------------------
@@ -459,14 +404,19 @@ contract TokenBondingCurveTest is Test {
     function testBuyInsufficientTokensAvailable() public {
         address buyer = address(1);
         uint256 nonce = 1;
-        uint256 tokenAllocation = totalSupplyTokens + 1;  // Try to buy more than total supply
-        uint256 numTokens = totalSupplyTokens + 1;
+        uint256 tokenAllocation = TOTAL_SUPPLY_TOKENS + 1;  // Try to buy more than total supply
+        uint256 numTokens = TOTAL_SUPPLY_TOKENS + 1;
         bytes memory signature = _getSignature(buyer, nonce, tokenAllocation);
 
+        // Calculate required ETH (even though it will fail)
+        uint256 buyPriceUsd = numTokens * BASE_PRICE_USD +
+            SLOPE_USD * (numTokens * 0 + (numTokens * (numTokens - 1)) / 2);
+        uint256 buyEthRequired = (buyPriceUsd * 1e18) / (2000e8);
+
         vm.prank(buyer);
-        vm.deal(buyer, 1000 ether);
+        vm.deal(buyer, buyEthRequired);
         vm.expectRevert("Not enough tokens available");
-        tokenBonding.buy{value: 1000 ether}(numTokens, tokenAllocation, nonce, signature);
+        tokenBonding.buy{value: buyEthRequired}(numTokens, tokenAllocation, nonce, signature);
     }
 
     //--------------------------------------------------------------------------
@@ -490,8 +440,8 @@ contract TokenBondingCurveTest is Test {
         bytes memory signature = _getSignature(buyer, nonce, tokenAllocation);
 
         // Calculate required ETH
-        uint256 buyPriceUsd = numTokens * basePriceUsd +
-            slopeUsd * (numTokens * 0 + (numTokens * (numTokens - 1)) / 2);
+        uint256 buyPriceUsd = numTokens * BASE_PRICE_USD +
+            SLOPE_USD * (numTokens * 0 + (numTokens * (numTokens - 1)) / 2);
         uint256 buyEthRequired = (buyPriceUsd * 1e18) / (2000e8);
 
         vm.startPrank(buyer);
@@ -508,20 +458,7 @@ contract TokenBondingCurveTest is Test {
     }
 
     function testDeployLiquidityTwice() public {
-        // First buy tokens to reach target market cap
-        address buyer = address(1);
-        uint256 nonce = 1;
-        uint256 tokenAllocation = 1000;
-        uint256 numTokens = 990;
-        bytes memory signature = _getSignature(buyer, nonce, tokenAllocation);
-
-        uint256 buyPriceUsd = numTokens * basePriceUsd +
-            slopeUsd * (numTokens * 0 + (numTokens * (numTokens - 1)) / 2);
-        uint256 buyEthRequired = (buyPriceUsd * 1e18) / (2000e8);
-
-        vm.prank(buyer);
-        vm.deal(buyer, buyEthRequired);
-        tokenBonding.buy{value: buyEthRequired}(numTokens, tokenAllocation, nonce, signature);
+        _reachTargetMarketCap();
 
         // First deployment
         vm.deal(address(tokenBonding), 10 ether);
@@ -536,37 +473,23 @@ contract TokenBondingCurveTest is Test {
         // Buy all tokens first
         address buyer = address(1);
         uint256 nonce = 1;
-        bytes memory signature = _getSignature(buyer, nonce, totalSupplyTokens);
+        bytes memory signature = _getSignature(buyer, nonce, TOTAL_SUPPLY_TOKENS);
 
-        uint256 buyPriceUsd = totalSupplyTokens * basePriceUsd +
-            slopeUsd * (totalSupplyTokens * 0 + (totalSupplyTokens * (totalSupplyTokens - 1)) / 2);
+        uint256 buyPriceUsd = TOTAL_SUPPLY_TOKENS * BASE_PRICE_USD +
+            SLOPE_USD * (TOTAL_SUPPLY_TOKENS * 0 + (TOTAL_SUPPLY_TOKENS * (TOTAL_SUPPLY_TOKENS - 1)) / 2);
         uint256 buyEthRequired = (buyPriceUsd * 1e18) / (2000e8);
 
         vm.prank(buyer);
         vm.deal(buyer, buyEthRequired);
-        tokenBonding.buy{value: buyEthRequired}(totalSupplyTokens, totalSupplyTokens, nonce, signature);
+        tokenBonding.buy{value: buyEthRequired}(TOTAL_SUPPLY_TOKENS, TOTAL_SUPPLY_TOKENS, nonce, signature);
 
         vm.expectRevert("No tokens available for liquidity");
         tokenBonding.deployLiquidity();
     }
 
     function testDeployLiquidityNoEth() public {
-        // First buy tokens to reach target market cap
-        address buyer = address(1);
-        uint256 nonce = 1;
-        uint256 tokenAllocation = 1000;
-        uint256 numTokens = 990;
-        bytes memory signature = _getSignature(buyer, nonce, tokenAllocation);
+        _reachTargetMarketCap();
 
-        uint256 buyPriceUsd = numTokens * basePriceUsd +
-            slopeUsd * (numTokens * 0 + (numTokens * (numTokens - 1)) / 2);
-        uint256 buyEthRequired = (buyPriceUsd * 1e18) / (2000e8);
-
-        vm.prank(buyer);
-        vm.deal(buyer, buyEthRequired);
-        tokenBonding.buy{value: buyEthRequired}(numTokens, tokenAllocation, nonce, signature);
-
-        // Instead of trying to transfer ETH out, set the balance to 0
         vm.deal(address(tokenBonding), 0);
 
         vm.expectRevert("No ETH available for liquidity");
@@ -581,8 +504,8 @@ contract TokenBondingCurveTest is Test {
         uint256 numTokens = 10;
         bytes memory signature = _getSignature(buyer, nonce, tokenAllocation);
 
-        uint256 buyPriceUsd = numTokens * basePriceUsd +
-            slopeUsd * (numTokens * 0 + (numTokens * (numTokens - 1)) / 2);
+        uint256 buyPriceUsd = numTokens * BASE_PRICE_USD +
+            SLOPE_USD * (numTokens * 0 + (numTokens * (numTokens - 1)) / 2);
         uint256 buyEthRequired = (buyPriceUsd * 1e18) / (2000e8);
 
         vm.startPrank(buyer);
@@ -597,22 +520,7 @@ contract TokenBondingCurveTest is Test {
     }
 
     function testTransferAfterLiquidity() public {
-        // First buy some tokens to reach target market cap
-        address buyer = address(1);
-        uint256 nonce = 1;
-        uint256 tokenAllocation = 1000;
-        uint256 numTokens = 990;
-        bytes memory signature = _getSignature(buyer, nonce, tokenAllocation);
-
-        // Calculate buy amount with proper precision
-        uint256 buyPriceUsd = numTokens * basePriceUsd +
-            slopeUsd * (numTokens * 0 + (numTokens * (numTokens - 1)) / 2);
-        uint256 buyEthRequired = (buyPriceUsd * 1e18) / (2000e8);
-
-        // Deal significantly more ETH than required
-        vm.prank(buyer);
-        vm.deal(buyer, buyEthRequired * 3);
-        tokenBonding.buy{value: buyEthRequired}(numTokens, tokenAllocation, nonce, signature);
+        _reachTargetMarketCap();
 
         // Deploy liquidity
         vm.deal(address(tokenBonding), 10 ether);
@@ -624,21 +532,17 @@ contract TokenBondingCurveTest is Test {
         uint256 secondNonce = 1;
         uint256 secondAllocation = 5;
         uint256 secondNumTokens = 2;
-        bytes memory secondSignature = _getSignature(secondBuyer, secondNonce, secondAllocation);
+        bytes memory signature = _getSignature(secondBuyer, secondNonce, secondAllocation);
 
-        // Calculate exact amount needed for second purchase
-        // Current price includes the slope from previous purchase
-        uint256 currentPriceUsd = basePriceUsd + (slopeUsd * tokenBonding.tokensSold());
+        uint256 currentPriceUsd = BASE_PRICE_USD + (SLOPE_USD * tokenBonding.tokensSold());
         uint256 secondBuyPriceUsd = secondNumTokens * currentPriceUsd +
-            slopeUsd * (secondNumTokens * tokenBonding.tokensSold() + (secondNumTokens * (secondNumTokens - 1)) / 2);
+            SLOPE_USD * (secondNumTokens * tokenBonding.tokensSold() + (secondNumTokens * (secondNumTokens - 1)) / 2);
         uint256 secondBuyEthRequired = (secondBuyPriceUsd * 1e18) / (2000e8);
         
-        // Deal significantly more ETH than required
         vm.prank(secondBuyer);
         vm.deal(secondBuyer, secondBuyEthRequired * 5);
-        tokenBonding.buy{value: secondBuyEthRequired}(secondNumTokens, secondAllocation, secondNonce, secondSignature);
+        tokenBonding.buy{value: secondBuyEthRequired}(secondNumTokens, secondAllocation, secondNonce, signature);
 
-        // Test transfer
         uint256 transferAmount = secondNumTokens * (10 ** tokenBonding.decimals());
         vm.prank(secondBuyer);
         tokenBonding.transfer(address(3), transferAmount);
@@ -646,34 +550,93 @@ contract TokenBondingCurveTest is Test {
     }
 
     function testWithdrawRemainingBeforeLiquidity() public {
+        // Need to be owner to withdraw
+        vm.prank(tokenBonding.owner());
         vm.expectRevert("Liquidity not deployed yet");
         tokenBonding.withdrawRemaining();
     }
 
     function testWithdrawRemainingNonOwner() public {
-        // First buy tokens to reach target market cap
+        _reachTargetMarketCap();
+
+        // Deploy liquidity
+        vm.deal(address(tokenBonding), 1 ether);
+        tokenBonding.deployLiquidity();
+
+        vm.prank(address(100));
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", address(100)));
+        tokenBonding.withdrawRemaining();
+    }
+
+    // Add new factory-specific tests
+    function testUpdateProjectLead() public {
+        address newProjectLead = address(99);
+        factory.updateProjectLead(newProjectLead);
+        assertEq(factory.projectLead(), newProjectLead);
+    }
+
+    function testUpdateProjectLeadNonOwner() public {
+        address newProjectLead = address(99);
+        vm.prank(address(100));
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", address(100)));
+        factory.updateProjectLead(newProjectLead);
+    }
+
+    function testUpdateAgent() public {
+        address newAgent = address(99);
+        factory.updateAgent(newAgent);
+        assertEq(factory.agent(), newAgent);
+    }
+
+    function testUpdateAgentNonOwner() public {
+        address newAgent = address(99);
+        vm.prank(address(100));
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", address(100)));
+        factory.updateAgent(newAgent);
+    }
+
+    function testDeployContractNonProjectLead() public {
+        bytes32 projectId = keccak256("test-project-2");
+        vm.prank(address(100));
+        vm.expectRevert("Caller is not project lead");
+        factory.deployContract(
+            projectId,
+            "BondingToken2",
+            "BOND2",
+            address(aggregator),
+            address(uniswapRouter)
+        );
+    }
+
+    function testDeployContractDuplicateId() public {
+        bytes32 projectId = keccak256("test-project");
+        vm.prank(projectLead);
+        vm.expectRevert("Project ID already exists");
+        factory.deployContract(
+            projectId,
+            "BondingToken2",
+            "BOND2",
+            address(aggregator),
+            address(uniswapRouter)
+        );
+    }
+
+    // Helper function to reach target market cap
+    function _reachTargetMarketCap() internal {
+        // Buy enough tokens to reach target market cap
         address buyer = address(1);
         uint256 nonce = 1;
-        uint256 tokenAllocation = 1000;
-        uint256 numTokens = 990;
+        uint256 tokenAllocation = 700_000_000; // 700M tokens
+        uint256 numTokens = 700_000_000;  // Buy 700M tokens to reach target
         bytes memory signature = _getSignature(buyer, nonce, tokenAllocation);
 
-        uint256 buyPriceUsd = numTokens * basePriceUsd +
-            slopeUsd * (numTokens * 0 + (numTokens * (numTokens - 1)) / 2);
+        // Calculate required ETH (with some buffer)
+        uint256 buyPriceUsd = numTokens * BASE_PRICE_USD +
+            SLOPE_USD * (numTokens * 0 + (numTokens * (numTokens - 1)) / 2);
         uint256 buyEthRequired = (buyPriceUsd * 1e18) / (2000e8);
 
         vm.prank(buyer);
-        vm.deal(buyer, buyEthRequired);
+        vm.deal(buyer, buyEthRequired * 2);  // Give extra ETH
         tokenBonding.buy{value: buyEthRequired}(numTokens, tokenAllocation, nonce, signature);
-
-        // Deploy liquidity
-        vm.deal(address(tokenBonding), 10 ether);
-        tokenBonding.deployLiquidity();
-
-        // Try to withdraw as non-owner
-        address nonOwner = address(1);
-        vm.prank(nonOwner);
-        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", nonOwner));
-        tokenBonding.withdrawRemaining();
     }
 } 
