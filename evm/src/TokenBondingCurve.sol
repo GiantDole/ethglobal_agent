@@ -153,11 +153,12 @@ contract TokenBondingCurve is ERC20, Ownable {
      * @notice Buy tokens by depositing ETH.
      *
      * The buyer must provide:
-     * - The number of tokens to buy (as a whole number).
+     * - The number of tokens to buy (as a whole number, must be <= tokenAllocation).
+     * - The tokenAllocation, which is the maximum number of tokens the buyer is allowed to buy.
      * - A user-specific nonce (which must be greater than any previously used nonce for this user).
      * - A signature from the agent approving the purchase.
      *
-     * The signature must be generated offline as follows (using ethers.js for example):
+     * The signature must be generated off-chain as follows (using ethers.js for example):
      *
      *   const messageHash = ethers.keccak256(
      *       ethers.AbiCoder.defaultAbiCoder().encode(
@@ -169,20 +170,23 @@ contract TokenBondingCurve is ERC20, Ownable {
      * The signature is then recovered on-chain and compared to the stored agent address.
      *
      * @param numTokens The number of tokens to buy (in whole tokens).
+     * @param tokenAllocation The maximum number of tokens the user is allowed to buy.
      * @param nonce A user-specific nonce.
      * @param signature The agent's signature (must sign the message hash).
      */
     function buy(
         uint256 numTokens,
+        uint256 tokenAllocation,
         uint256 nonce,
         bytes calldata signature
     ) external payable {
         require(numTokens > 0, "Must buy at least one token");
+        require(numTokens <= tokenAllocation, "Cannot buy more than allocation");
         require(nonce > nonces[msg.sender], "Invalid nonce");
 
-        // Reproduce the message hash for signature verification.
+        // Reproduce the message hash for signature verification using tokenAllocation.
         bytes32 messageHash = keccak256(
-            abi.encode(msg.sender, nonce, address(this), numTokens)
+            abi.encode(msg.sender, nonce, address(this), tokenAllocation)
         );
         address recovered = messageHash.toEthSignedMessageHash().recover(signature);
         require(recovered == agent, "Invalid agent signature");
