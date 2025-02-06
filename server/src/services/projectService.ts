@@ -1,6 +1,6 @@
 import redis from '../database/redis';
 import supabaseClient from '../database/supabase';
-import { ConversationState } from './interactionService';
+import { ConversationState, SessionData } from '../types/conversation';
 
 export const getAllProjects = async () => {
     const { data, error } = await supabaseClient
@@ -32,16 +32,49 @@ export const getProjectConversationHistory = async ({
   const sessionData = await redis.get(`session:${userId}`);
   if (!sessionData) return null;
   
-  const session = JSON.parse(sessionData);
+  const session: SessionData = JSON.parse(sessionData);
   return session.projects[projectId] || null;
 };
 
-export const setProjectConversationHistory = async (projectId: string, userId: string, conversationHistory: ConversationState) => {
+export const updateProjectConversationHistory = async ({
+  projectId,
+  userId,
+  conversationState,
+}: {
+  projectId: string;
+  userId: string;
+  conversationState: ConversationState;
+}): Promise<void> => {
   const sessionData = await redis.get(`session:${userId}`);
-  if (!sessionData) return null;
+  if (!sessionData) throw new Error('Session not found');
   
-  const session = JSON.parse(sessionData);
-  session.projects[projectId] = conversationHistory;
+  const session: SessionData = JSON.parse(sessionData);
+  session.projects[projectId] = conversationState;
+  
+  await redis.set(`session:${userId}`, JSON.stringify(session));
+};
+
+export const resetProjectConversation = async ({
+  projectId,
+  userId,
+}: {
+  projectId: string;
+  userId: string;
+}): Promise<ConversationState> => {
+  const sessionData = await redis.get(`session:${userId}`);
+  if (!sessionData) throw new Error('Session not found');
+  
+  const session: SessionData = JSON.parse(sessionData);
+  const newState: ConversationState = {
+    history: [],
+    final: false,
+    access: false
+  };
+  
+  session.projects[projectId] = newState;
+  await redis.set(`session:${userId}`, JSON.stringify(session));
+  
+  return newState;
 };
 
 /*

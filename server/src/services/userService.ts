@@ -1,19 +1,6 @@
 import redis from '../database/redis';
 import supabaseClient from "../database/supabase";
-
-interface ProjectSession {
-  history: Array<{ question: string; answer: string }>;
-  final: boolean;
-  access: boolean;
-}
-
-interface SessionData {
-  startedAt: Date;
-  projects: {
-    [projectId: string]: ProjectSession;
-  };
-}
-
+import { SessionData } from '../types/conversation';
 interface PrivyLinkedAccount {
   type: string;
   address: string;

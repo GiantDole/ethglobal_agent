@@ -17,7 +17,7 @@ export interface ConversationState {
     conversationState: ConversationState | null
   ): Promise<BouncerResponse> => {
     var nextMessage;
-    if (conversationState) {
+    if (conversationState && conversationState.history.length > 0) {
         // Find the last unanswered question and update its answer
         const pendingQuestion = conversationState.history.find(h => h.answer === null);
         if (pendingQuestion) {

@@ -1,41 +1,41 @@
 import { Request, Response } from 'express';
 import { processConversation } from '../services/interactionService';
-import { setProjectConversationHistory, getProjectConversationHistory } from '../services/projectService';
+import { getProjectConversationHistory, updateProjectConversationHistory, resetProjectConversation } from '../services/projectService';
 import { privyService } from '../services/privyServiceSingleton';
 
 export const handleConversation = async (req: Request, res: Response) => {
-  console.log('⭐ Starting handleConversation with params:', { tokenId: req.params.tokenId });
-  
-  const tokenId = req.params.projectId;
-  const userInput = req.body.answer;
-  console.log('📝 Received user input:', req.body);
+  const { projectId } = req.params;
+  const { answer, reset } = req.body; // Add reset flag to request body
   
   const userId = await privyService.getUserIdFromAccessToken(req);
-  console.log('👤 Retrieved userId:', userId);
-
-  const conversationHistory = await getProjectConversationHistory({projectId: tokenId, userId});
-  console.log('💬 Conversation history length:', conversationHistory || 0);
-  
-  // Validate the input data
-  if (conversationHistory && !userInput) {
-    console.log('❌ Validation failed: Missing user input');
-    return res.status(400).json({ error: 'Missing user input' });
-  }
 
   try {
-    console.log('🔄 Processing conversation...');
-    // Process the conversation
-    const result = await processConversation(userInput, conversationHistory);
-    await setProjectConversationHistory(tokenId, userId, result.conversationState);
+    let conversationState;
+    
+    if (reset) {
+      // Reset the conversation if requested
+      conversationState = await resetProjectConversation({ projectId, userId });
+    } else {
+      conversationState = await getProjectConversationHistory({ projectId, userId });
+    }
 
-    // Respond with the AI result
+    // Process the conversation
+    const result = await processConversation(answer, conversationState);
+    
+    // Update the conversation state in Redis
+    await updateProjectConversationHistory({
+      projectId,
+      userId,
+      conversationState: result.conversationState
+    });
+
     return res.json({
       message: result.nextMessage,
       shouldContinue: result.shouldContinue,
       decision: result.decision,
     });
   } catch (error) {
-    console.error('❌ Error processing conversation:', error);
+    console.error('Error processing conversation:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
