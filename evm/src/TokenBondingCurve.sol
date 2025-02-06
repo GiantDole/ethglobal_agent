@@ -2,10 +2,24 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 // Import the Chainlink Aggregator interface for ETH/USD price feed
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+
+/**
+ * @dev Minimal Uniswap V2 Router interface
+ */
+interface IUniswapV2Router02 {
+    function addLiquidityETH(
+         address token,
+         uint256 amountTokenDesired,
+         uint256 amountTokenMin,
+         uint256 amountETHMin,
+         address to,
+         uint256 deadline
+    ) external payable returns (uint256 amountToken, uint256 amountETH, uint256 liquidity);
+}
 
 /**
  * @title TokenBondingCurve
@@ -34,15 +48,17 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
  * The contract uses a mapping of nonces to ensure that no signature can be reused.
  *
  * Users can also sell tokens back to the contract and get an ETH refund that is computed
- * on the inverse bonding curve. The admin (DEFAULT_ADMIN_ROLE) may withdraw ETH from
- * the contract and update the agent key.
+ * on the inverse bonding curve.
+ *
+ * Additional features:
+ * - Once the target market cap is reached (i.e., maturity of the bonding curve), 
+ *   anyone can deploy liquidity by adding the contract's remaining tokens and ETH
+ *   into a Uniswap liquidity pool.
+ * - The owner may withdraw ETH from the contract and update the agent key.
  */
-contract TokenBondingCurve is ERC20, AccessControl {
+contract TokenBondingCurve is ERC20, Ownable {
     using ECDSA for bytes32;
 
-    // For access control, we use the default admin role.
-    // The deployer is granted DEFAULT_ADMIN_ROLE.
-    
     // The agent address whose signatures are required.
     address public agent;
 
@@ -52,6 +68,7 @@ contract TokenBondingCurve is ERC20, AccessControl {
     // Bonding curve parameters (prices expressed in USD with 8 decimals)
     uint256 public basePriceUsd;
     uint256 public slopeUsd;
+    uint256 public targetMarketCapUsd;
 
     // Track how many tokens (in whole tokens, not smallest units) have been sold.
     uint256 public tokensSold;
@@ -61,6 +78,12 @@ contract TokenBondingCurve is ERC20, AccessControl {
 
     // Total fixed supply is provided at deployment (in whole tokens)
     uint256 public immutable totalSupplyTokens;
+
+    // Flag to ensure liquidity is only deployed once.
+    bool public liquidityDeployed;
+
+    // Uniswap V2 router instance.
+    IUniswapV2Router02 public uniswapRouter;
 
     // ========== Events ==========
     event TokensBought(
@@ -78,6 +101,7 @@ contract TokenBondingCurve is ERC20, AccessControl {
     );
     event AgentUpdated(address indexed oldAgent, address indexed newAgent);
     event Withdraw(address indexed owner, uint256 amount);
+    event LiquidityDeployed(uint256 tokenAmount, uint256 ethAmount, uint256 liquidity);
 
     /**
      * @notice Constructor.
@@ -88,6 +112,7 @@ contract TokenBondingCurve is ERC20, AccessControl {
      * @param _slopeUsd The USD increase per token sold (8 decimals, e.g., 1e8 for a $1 increment).
      * @param _agent The agent address whose signatures are required.
      * @param _priceFeed The address of the Chainlink ETH/USD price feed.
+     * @param _targetMarketCapUsd The target market cap (in USD, 8 decimals) that must be reached before liquidity can be deployed.
      */
     constructor(
         string memory name_,
@@ -96,22 +121,33 @@ contract TokenBondingCurve is ERC20, AccessControl {
         uint256 _basePriceUsd,
         uint256 _slopeUsd,
         address _agent,
-        address _priceFeed
+        address _priceFeed,
+        uint256 _targetMarketCapUsd
     ) ERC20(name_, symbol_) {
         require(_agent != address(0), "Agent address cannot be zero");
         require(_priceFeed != address(0), "Price feed address cannot be zero");
+        require(_targetMarketCapUsd > 0, "Target market cap must be > 0");
 
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         agent = _agent;
         basePriceUsd = _basePriceUsd;
         slopeUsd = _slopeUsd;
         totalSupplyTokens = _totalSupplyTokens;
+        targetMarketCapUsd = _targetMarketCapUsd;
 
         // Mint the entire fixed supply to the contract for sale.
         _mint(address(this), _totalSupplyTokens * (10 ** decimals()));
 
         // Initialize the Chainlink price feed.
         priceFeed = AggregatorV3Interface(_priceFeed);
+    }
+
+    /**
+     * @notice Sets the Uniswap V2 router address.
+     * @param routerAddress The address of the Uniswap V2 router.
+     */
+    function setUniswapRouter(address routerAddress) external onlyOwner {
+        require(routerAddress != address(0), "Router address cannot be zero");
+        uniswapRouter = IUniswapV2Router02(routerAddress);
     }
 
     /**
@@ -135,7 +171,7 @@ contract TokenBondingCurve is ERC20, AccessControl {
      *
      * @param numTokens The number of tokens to buy (in whole tokens).
      * @param nonce A user-specific nonce.
-     * @param signature The agent’s signature (must sign the message hash).
+     * @param signature The agent's signature (must sign the message hash).
      */
     function buy(
         uint256 numTokens,
@@ -248,10 +284,10 @@ contract TokenBondingCurve is ERC20, AccessControl {
 
     /**
      * @notice Withdraw ETH from the contract.
-     * Only callable by accounts with the DEFAULT_ADMIN_ROLE.
+     * Only callable by the owner.
      * @param amount The amount of ETH (in wei) to withdraw.
      */
-    function withdraw(uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function withdraw(uint256 amount) external onlyOwner {
         require(address(this).balance >= amount, "Insufficient ETH balance");
         (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "Withdrawal failed");
@@ -260,14 +296,61 @@ contract TokenBondingCurve is ERC20, AccessControl {
 
     /**
      * @notice Update the agent address.
-     * Only callable by accounts with the DEFAULT_ADMIN_ROLE.
+     * Only callable by the owner.
      * @param newAgent The new agent address.
      */
-    function updateAgent(address newAgent) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function updateAgent(address newAgent) external onlyOwner {
         require(newAgent != address(0), "New agent cannot be zero address");
         address oldAgent = agent;
         agent = newAgent;
         emit AgentUpdated(oldAgent, newAgent);
+    }
+
+    /**
+     * @notice Deploys liquidity to Uniswap by depositing the remaining tokens and ETH 
+     *         into a new liquidity pool. This function can only be executed once 
+     *         the target market cap is reached (i.e., maturity of the bonding curve).
+     *
+     * For the current market cap, we calculate:
+     *   currentPriceUsd = basePriceUsd + slopeUsd * tokensSold
+     *   currentMarketCapUsd = tokensSold * currentPriceUsd
+     */
+    function deployLiquidity() external {
+        require(!liquidityDeployed, "Liquidity already deployed");
+
+        // Calculate the current token price and market cap.
+        uint256 currentPriceUsd = basePriceUsd + (slopeUsd * tokensSold);
+        uint256 currentMarketCapUsd = tokensSold * currentPriceUsd;
+        require(currentMarketCapUsd >= targetMarketCapUsd, "Target market cap not reached");
+
+        require(address(uniswapRouter) != address(0), "Uniswap router not set");
+
+        // Get the total unsold token balance (tokens remaining in the contract).
+        uint256 tokenAmount = balanceOf(address(this));
+        require(tokenAmount > 0, "No tokens available for liquidity");
+
+        // Get the ETH balance available in the contract.
+        uint256 ethAmount = address(this).balance;
+        require(ethAmount > 0, "No ETH available for liquidity");
+
+        // Approve the Uniswap router to spend the contract's tokens.
+        _approve(address(this), address(uniswapRouter), tokenAmount);
+
+        // Set a deadline (e.g., 15 minutes from now) for the liquidity addition.
+        uint256 deadline = block.timestamp + 15 minutes;
+
+        // Call the Uniswap router to add liquidity.
+        (uint256 usedTokenAmount, uint256 usedETH, uint256 liquidity) = uniswapRouter.addLiquidityETH{value: ethAmount}(
+            address(this),
+            tokenAmount,
+            0,      // Accept any amount of tokens (slippage not handled here)
+            0,      // Accept any amount of ETH (slippage not handled here)
+            msg.sender, // Send the liquidity pool (LP) tokens to the owner
+            deadline
+        );
+
+        liquidityDeployed = true;
+        emit LiquidityDeployed(usedTokenAmount, usedETH, liquidity);
     }
 
     /**
