@@ -13,6 +13,7 @@
     "@privy-io/server-auth": "^1.18.4",
     "@supabase/supabase-js": "^2.48.1",
     "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "ioredis": "^5.4.2",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.8",
+    "@types/cors": "^2.8.17",
     "@types/express": "^4.17.1",
     "cross-env": "^7.0.3",
     "nodemon": "^2.0.15",

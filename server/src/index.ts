@@ -4,6 +4,7 @@ import userRoutes from './routes/userRoutes';
 import cookieParser from 'cookie-parser';
 import projectRoutes from './routes/projectRoutes';
 import interactionRoutes from './routes/interactionRoutes';
+import cors from 'cors';
 
 dotenv.config();
 
@@ -11,7 +12,10 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cookieParser());
-
+app.use(cors({
+  origin: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 
 

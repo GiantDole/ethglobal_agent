@@ -1,133 +1,84 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-// import { redirect } from "next/navigation";
-// import Login from "../components/login";
-
-// import { PrivyClient } from "@privy-io/server-auth";
-// import { cookies } from "next/headers";
-
 import { useState, useEffect } from "react";
 import Link from 'next/link';
+import ProjectClient from "../clients/Projects";
 
 type Token = {
+  id: number;
   name: string;
-  description: string;
-  marketCap: string;
-  exclusivity: string;
-  image: string;
-  address: string;
+  short_description: string;
+  token_ticker: string | null;
+  token_address: string | null;
+  author: string;
+  status: number;
+  created_at: string;
 };
 
+const projectClient = new ProjectClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+
 export default function Page() {
-  const router = useRouter();
   const [tokens, setTokens] = useState<Token[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const mockTokens: Token[] = [
-      {
-        name: "DoggoByte",
-        description: "DoggoByte (SDGB) is the ultimate community-driven memecoin.",
-        marketCap: "$100K",
-        exclusivity: "6%",
-        image: "/images/avatar.png",
-        address: "doggobyte-address",
-      },
-      {
-        name: "Tokenname",
-        description: "Description Text",
-        marketCap: "$100K",
-        exclusivity: "6%",
-        image: "/images/avatar.png",
-        address: "tokenname-address",
-      },
-      {
-        name: "Tokenname",
-        description: "Description Text",
-        marketCap: "$100K",
-        exclusivity: "6%",
-        image: "/images/avatar.png",
-        address: "tokenname-address",
-      },
-      {
-        name: "Tokenname",
-        description: "Description Text",
-        marketCap: "$100K",
-        exclusivity: "6%",
-        image: "/images/avatar.png",
-        address: "tokenname-address",
-      },
-      {
-        name: "Tokenname",
-        description: "Description Text",
-        marketCap: "$100K",
-        exclusivity: "6%",
-        image: "/images/avatar.png",
-        address: "tokenname-address",
-      },
-      {
-        name: "Tokenname",
-        description: "Description Text",
-        marketCap: "$100K",
-        exclusivity: "6%",
-        image: "/images/avatar.png",
-        address: "tokenname-address",
-      },
-    ];
+    const fetchTokens = async () => {
+      try {
+        const data = await projectClient.getAll();
+        if (data) {
+          setTokens(data);
+        }
+      } catch (err) {
+        setError('Failed to fetch tokens');
+        console.error('Error fetching tokens:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setTokens(mockTokens);
+    fetchTokens();
   }, []);
 
-  // const cookieStore = await cookies()
-  // const cookieAuthToken = cookieStore.get("privy-token")?.value;
+  if (loading) {
+    return <div className="container mx-auto py-12 px-24">Loading...</div>;
+  }
 
-  // if (cookieAuthToken){
-  //   const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-  //   const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
-  //   const client = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
-
-  //   try {
-  //     const claims = await client.verifyAuthToken(cookieAuthToken);
-  //     console.log({ claims });
-
-  //     redirect("/dashboard");
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // }
+  if (error) {
+    return <div className="container mx-auto py-12 px-24 text-red-500">{error}</div>;
+  }
 
   return (
     <main>
-      <div className="container mx-auto py-12 px-24">
+      <div className="container mx-auto py-12 px-6 md:px-12 lg:px-24">
         <h1 className="text-4xl font-bold mb-10">Current Events</h1>
-        <div className="grid grid-cols-4 gap-4">
-          {tokens.map((token, index) => (
-            <Link key={index} href={`/token/${token.address}`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {tokens.map((token) => (
+            <Link key={token.id} href={`/token/${token.id}`}>
               <div className="p-4 border rounded-lg shadow-md cursor-pointer">
-                <img src={token.image} alt={token.name} className="w-full h-64 object-cover mb-2" />
+                <img 
+                  src="/images/avatar.png" 
+                  alt={token.name} 
+                  className="w-full h-64 object-cover mb-2" 
+                />
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-500">Created by: Autor</span>
+                  <span className="text-sm text-gray-500">Created by: {token.author}</span>
                   <span className="text-xl">🔗</span>
                 </div>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-bold">{token.name}</h3>
-                  <span className="text-lg font-bold">$DGB</span>
+                  <span className="text-lg font-bold">
+                    {token.token_ticker ? `$${token.token_ticker}` : 'N/A'}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-700 mb-2">{token.description}</p>
-                <p className="text-sm font-semibold">Market Cap: {token.marketCap}</p>
-                <p className="text-sm font-semibold">Exclusivity: {token.exclusivity}</p>
+                <p className="text-sm text-gray-700 mb-2">{token.short_description}</p>
+                <p className="text-sm font-semibold">
+                  Status: {token.status === 1 ? 'Active' : 'Inactive'}
+                </p>
               </div>
             </Link>
           ))}
         </div>
-        <button
-          className="mt-6 text-blue-500"
-          onClick={() =>
-            router.push("/token/TAp4f5i5Ct4XMhDiJzGGjBUA1UoWFKZtXs")
-          }
-        >
-          Redirect to Token Details
-        </button>
       </div>
     </main>
   );
