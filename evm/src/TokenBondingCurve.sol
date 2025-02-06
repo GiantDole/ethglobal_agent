@@ -55,7 +55,6 @@ interface IUniswapV2Router02 {
  *   Only transfers from the contract (i.e., in buy) or to the contract (i.e., in sell) are allowed.
  * - Once the target market cap is reached, the owner can deploy liquidity by adding the contract's remaining tokens and ETH
  *   into a Uniswap liquidity pool.
- * - The owner may withdraw ETH from the contract and update the agent key.
  */
 contract TokenBondingCurve is ERC20, Ownable {
     using ECDSA for bytes32;
@@ -181,8 +180,7 @@ contract TokenBondingCurve is ERC20, Ownable {
         require(numTokens > 0, "Must buy at least one token");
         require(nonce > nonces[msg.sender], "Invalid nonce");
 
-        // Reproduce the message hash (without a prefix) and then use the standard
-        // Ethereum Signed Message hash.
+        // Reproduce the message hash for signature verification.
         bytes32 messageHash = keccak256(
             abi.encode(msg.sender, nonce, address(this), numTokens)
         );
@@ -193,28 +191,21 @@ contract TokenBondingCurve is ERC20, Ownable {
         nonces[msg.sender] = nonce;
 
         // Calculate the cost in USD (8 decimals).
-        // costUsd = numTokens * basePriceUsd + slopeUsd * (numTokens * tokensSold + (numTokens*(numTokens-1))/2)
         uint256 costUsd = numTokens * basePriceUsd +
             slopeUsd * (numTokens * tokensSold + (numTokens * (numTokens - 1)) / 2);
 
-        // Get the current ETH/USD price (8 decimals).
-        uint256 ethUsdPrice = getLatestEthPrice();
-
-        // Convert the ETH sent (msg.value in wei) into USD.
-        // depositUsd = (msg.value * ethUsdPrice) / 1e18
-        uint256 depositUsd = (msg.value * ethUsdPrice) / 1e18;
-
+        // Convert the ETH sent into USD using the helper (rounds down).
+        uint256 depositUsd = _convertEthToUsd(msg.value);
         require(depositUsd >= costUsd, "Insufficient ETH for token purchase");
 
         // If the buyer overpays, compute the ETH refund.
         uint256 refundEth = 0;
         if (depositUsd > costUsd) {
             uint256 refundUsd = depositUsd - costUsd;
-            // Convert USD refund back to ETH.
-            refundEth = (refundUsd * 1e18) / ethUsdPrice;
+            refundEth = _convertUsdToEth(refundUsd);
         }
 
-        // Update the number of tokens sold.
+        // Update the tokens sold.
         tokensSold += numTokens;
 
         // Transfer tokens from the contract to the buyer.
@@ -384,4 +375,22 @@ contract TokenBondingCurve is ERC20, Ownable {
 
     /// @notice Allow the contract to receive ETH.
     receive() external payable {}
+
+    /**
+     * @dev Convert ETH (in wei) to its USD value (8 decimals) rounding down.
+     * Rounding down here ensures that a buyer's ETH is valued slightly lower than
+     * the true conversion rate — a worse price for the user.
+     */
+    function _convertEthToUsd(uint256 ethAmount) internal view returns (uint256) {
+        return (ethAmount * getLatestEthPrice()) / 1e18;
+    }
+
+    /**
+     * @dev Convert a USD amount (8 decimals) to ETH (in wei) rounding down.
+     * Rounding down here means that a seller receives slightly less ETH than the exact
+     * conversion would yield — again, a worse price for the user.
+     */
+    function _convertUsdToEth(uint256 usdAmount) internal view returns (uint256) {
+        return (usdAmount * 1e18) / getLatestEthPrice();
+    }
 }
