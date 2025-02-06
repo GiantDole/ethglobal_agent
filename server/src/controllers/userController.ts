@@ -6,55 +6,46 @@ import { privyService } from '../services/privyServiceSingleton';
 /**
  * Controller to register a new or existing user.
  * This endpoint will:
- *  - Verify the access token using Privy's verification via PrivyService.
- *  - Retrieve user details using the identity token.
- *  - Register (or reset) a session with the returned user information.
- *  - Respond with a static first question.
+ *  - Verify the access token via Privy.
+ *  - Retrieve user details from the identity token.
+ *  - Register (or reset) a session.
+ *  - Respond with a static message.
  */
 export const registerUser = async (req: Request, res: Response): Promise<Response> => {
   try {
-    // Get Privy configuration from environment variables.
-    if(!req.cookies) {
-      return res.status(401).json({ message: 'Unauthorized: Missing cookies' });
-    }
-    /*
-    const appId = process.env.PRIVY_APP_ID;
-    const verificationKey = process.env.PRIVY_VERIFICATION_KEY;
-    if (!appId || !verificationKey) {
-      logger.error("Missing Privy configuration (PRIVY_APP_ID or PRIVY_VERIFICATION_KEY).");
-      return res.status(500).json({ message: 'Server configuration error' });
+    // Check that both required cookies exist.
+    if (
+      !req.cookies ||
+      !req.cookies['privy-token'] ||
+      !req.cookies['privy-id-token']
+    ) {
+      logger.warn("Unauthorized: Missing required cookies");
+      return res.status(401).json({ error: 'Unauthorized: Missing required cookies' });
     }
 
-    // Instantiate the PrivyService.
-    const privyService = new (require('../services/privyService').PrivyService)({ appId, verificationKey });
-    */
-    // Verify the access token provided in the request.
+    // Verify and extract user information.
     const authTokenClaims = await privyService.verifyAccessToken(req);
-
-    // Retrieve user information using the identity token.
     const userInfo = await privyService.getUserFromIdentityToken(req);
-
-    // Extract user id from the token claims and/or user information.
     const userId = userInfo.id;
     if (!userId) {
       logger.warn({ authTokenClaims, userInfo }, "Register: No user id found in token.");
-      return res.status(400).json({ message: 'User id not found in token' });
+      return res.status(400).json({ error: 'User id not found in token' });
     }
 
-    // Register or reset the user session in redis using Privy user id
+    // Register or reset the user's session.
     await registerSession(userId);
     logger.info({ user: userId, wallet: userInfo.wallet }, "Register: User session successfully registered.");
 
-    // Create user in Supabase if they don't exist
-    const userExists = await userExistsWithPrivyId(userId);
-    if (!userExists) {
+    // Create the user in Supabase if they don't exist.
+    const exists = await userExistsWithPrivyId(userId);
+    if (!exists) {
       await createUserWithAccounts(userInfo);
     }
 
-    // Respond with a static question.
     return res.status(200).json({ message: 'User registered successfully' });
-  } catch (error) {
-    logger.error(error, "Error in registerUser controller:");
-    return res.status(500).json({ message: 'Internal Server Error' });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Error in registerUser controller: ${errorMessage}`, error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 }; 
