@@ -290,45 +290,89 @@ contract TokenBondingCurve is ERC20, Ownable {
     }
 
     /**
-     * @notice Deploys liquidity to Uniswap by depositing the remaining tokens and ETH 
-     *         into a new liquidity pool. This function can only be executed once 
-     *         the target market cap is reached (i.e., maturity of the bonding curve).
+     * @notice Deploy liquidity to Uniswap by depositing tokens and ETH at the correct price.
      *
-     * For the current market cap, we calculate:
-     *   currentPriceUsd = basePriceUsd + slopeUsd * tokensSold
-     *   currentMarketCapUsd = tokensSold * currentPriceUsd
+     * The contract determines the current token price (in USD) based on the bonding curve:
+     *   currentPriceUsd = basePriceUsd + slopeUsd * tokensSold.
+     *
+     * It then checks the available ETH in the contract and calculates:
+     *   usdAvailable = (ETH available * latest ETH/USD price) / 1e18.
+     *
+     * From this, it computes the ideal number of tokens (in whole tokens) that should be
+     * paired with the available ETH to maintain the current price:
+     *   idealTokenWhole = usdAvailable / currentPriceUsd.
+     *
+     * Next, the unsold tokens (held in the contract) are converted to whole tokens.
+     * If there are enough tokens to cover the idealTokenWhole, liquidity is deployed using
+     * exactly idealTokenWhole tokens and all available ETH. Otherwise, if tokens are insufficient,
+     * it uses all available tokens and calculates the ETH that exactly matches that token amount.
+     *
+     * After liquidity is deployed (and only once maturity is reached), any remaining tokens and ETH
+     * can later be withdrawn by the owner (via withdrawRemaining).
      */
     function deployLiquidity() external {
         require(!liquidityDeployed, "Liquidity already deployed");
 
-        // Calculate the current token price and market cap.
+        // Calculate the current token price in USD (with 8 decimals).
         uint256 currentPriceUsd = basePriceUsd + (slopeUsd * tokensSold);
+
+        // Check that the target market cap is reached.
         uint256 currentMarketCapUsd = tokensSold * currentPriceUsd;
         require(currentMarketCapUsd >= targetMarketCapUsd, "Target market cap not reached");
 
         require(address(uniswapRouter) != address(0), "Uniswap router not set");
 
-        // Get the total unsold token balance (tokens remaining in the contract).
-        uint256 tokenAmount = balanceOf(address(this));
-        require(tokenAmount > 0, "No tokens available for liquidity");
+        // Get the unsold token balance (in smallest units) stored in the contract.
+        uint256 tokenBalance = balanceOf(address(this));
+        require(tokenBalance > 0, "No tokens available for liquidity");
 
-        // Get the ETH balance available in the contract.
-        uint256 ethAmount = address(this).balance;
-        require(ethAmount > 0, "No ETH available for liquidity");
+        // Get the available ETH in the contract.
+        uint256 ethAvailable = address(this).balance;
+        require(ethAvailable > 0, "No ETH available for liquidity");
 
-        // Approve the Uniswap router to spend the contract's tokens.
-        _approve(address(this), address(uniswapRouter), tokenAmount);
+        // Convert available ETH into its USD value (8 decimals) using the Chainlink price feed.
+        uint256 usdAvailable = (ethAvailable * getLatestEthPrice()) / 1e18;
+        // Determine the ideal number of tokens (in whole tokens) that should be paired with the ETH.
+        uint256 idealTokenWhole = usdAvailable / currentPriceUsd;
 
-        // Set a deadline (e.g., 15 minutes from now) for the liquidity addition.
+        // Convert the token balance to whole tokens.
+        uint256 tokenBalanceWhole = tokenBalance / (10 ** decimals());
+
+        uint256 tokensToDeployWhole;
+        uint256 usedEth;
+
+        if (tokenBalanceWhole >= idealTokenWhole && idealTokenWhole > 0) {
+            // There are more unsold tokens than needed to match the available ETH.
+            // Deploy liquidity using exactly idealTokenWhole tokens and all available ETH.
+            tokensToDeployWhole = idealTokenWhole;
+            usedEth = ethAvailable;
+        } else {
+            // Not enough tokens to cover the full ETH available.
+            // Use all available tokens and compute the matching ETH.
+            tokensToDeployWhole = tokenBalanceWhole;
+            uint256 requiredUsd = tokensToDeployWhole * currentPriceUsd;
+            usedEth = (requiredUsd * 1e18) / getLatestEthPrice();
+        }
+
+        require(tokensToDeployWhole > 0, "Calculated token amount is zero");
+        require(usedEth > 0, "Calculated ETH amount is zero");
+
+        // Convert the whole token count back to the token's smallest units.
+        uint256 tokensToDeploy = tokensToDeployWhole * (10 ** decimals());
+
+        // Approve the Uniswap router to spend the tokens.
+        _approve(address(this), address(uniswapRouter), tokensToDeploy);
+
+        // Set a deadline for the liquidity addition (e.g., 15 minutes in the future).
         uint256 deadline = block.timestamp + 15 minutes;
 
-        // Call the Uniswap router to add liquidity.
-        (uint256 usedTokenAmount, uint256 usedETH, uint256 liquidity) = uniswapRouter.addLiquidityETH{value: ethAmount}(
+        // Call the Uniswap router to add liquidity using the calculated token and ETH amounts.
+        (uint256 usedTokenAmount, uint256 usedETH, uint256 liquidity) = uniswapRouter.addLiquidityETH{value: usedEth}(
             address(this),
-            tokenAmount,
-            0,      // Accept any amount of tokens (slippage not handled here)
-            0,      // Accept any amount of ETH (slippage not handled here)
-            msg.sender, // Send the liquidity pool (LP) tokens to the owner
+            tokensToDeploy,
+            0,      // Accept any amount of tokens
+            0,      // Accept any amount of ETH
+            owner(), // LP tokens will be sent to the owner
             deadline
         );
 
