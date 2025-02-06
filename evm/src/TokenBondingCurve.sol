@@ -365,6 +365,14 @@ contract TokenBondingCurve is ERC20, Ownable {
     }
 
     /**
+     * @notice Retrieves the current token price based on the bonding curve.
+     * @return price The current token price in USD (8 decimals).
+     */
+    function getCurrentPrice() public view returns (uint256 price) {
+        return basePriceUsd + (slopeUsd * tokensSold);
+    }
+
+    /**
      * @notice Override hook to restrict token transfers until liquidity is deployed.
      *         Until liquidity is deployed, transfers between externally owned accounts are locked.
      *         Only transfers from the contract (buy) or to the contract (sell), minting or burning are allowed.
