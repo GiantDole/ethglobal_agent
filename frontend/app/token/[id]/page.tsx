@@ -41,7 +41,7 @@ function TokenDetail() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const tokenData = await projectClient.get(params.address as string);
+        const tokenData = await projectClient.get(params.id as string);
         if (tokenData) {
           // Combine backend data with hardcoded display data
           setData({
@@ -61,10 +61,10 @@ function TokenDetail() {
       }
     };
 
-    if (params.address) {
+    if (params.id) {
       fetchData();
     }
-  }, [params.address]);
+  }, [params.id]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
