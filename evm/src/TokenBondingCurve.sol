@@ -441,4 +441,27 @@ contract TokenBondingCurve is ERC20, Ownable {
     function _convertUsdToEth(uint256 usdAmount) internal view returns (uint256) {
         return (usdAmount * 1e18) / getLatestEthPrice();
     }
+
+    /**
+     * @notice Withdraw remaining ETH and tokens from the contract after liquidity is deployed.
+     *
+     * This function can only be called after liquidity has been deployed.
+     * It sends all remaining ETH to the owner and transfers any unsold tokens from the contract.
+     */
+    function withdrawRemaining() external onlyOwner {
+        require(liquidityDeployed, "Liquidity not deployed yet");
+
+        // Withdraw any remaining ETH.
+        uint256 remainingEth = address(this).balance;
+        if (remainingEth > 0) {
+            (bool success, ) = owner().call{value: remainingEth}("");
+            require(success, "ETH withdrawal failed");
+        }
+
+        // Withdraw any remaining tokens.
+        uint256 remainingTokens = balanceOf(address(this));
+        if (remainingTokens > 0) {
+            _transfer(address(this), owner(), remainingTokens);
+        }
+    }
 }
