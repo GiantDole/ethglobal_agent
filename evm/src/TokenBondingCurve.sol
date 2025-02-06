@@ -101,7 +101,6 @@ contract TokenBondingCurve is ERC20, Ownable {
         uint256 ethRefunded
     );
     event AgentUpdated(address indexed oldAgent, address indexed newAgent);
-    event Withdraw(address indexed owner, uint256 amount);
     event LiquidityDeployed(uint256 tokenAmount, uint256 ethAmount, uint256 liquidity);
 
     /**
@@ -281,18 +280,6 @@ contract TokenBondingCurve is ERC20, Ownable {
         require(successRefund, "ETH refund failed");
 
         emit TokensSold(msg.sender, numTokens, refundUsd, refundEth);
-    }
-
-    /**
-     * @notice Withdraw ETH from the contract.
-     * Only callable by the owner.
-     * @param amount The amount of ETH (in wei) to withdraw.
-     */
-    function withdraw(uint256 amount) external onlyOwner {
-        require(address(this).balance >= amount, "Insufficient ETH balance");
-        (bool success, ) = msg.sender.call{value: amount}("");
-        require(success, "Withdrawal failed");
-        emit Withdraw(msg.sender, amount);
     }
 
     /**
