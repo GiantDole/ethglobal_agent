@@ -111,6 +111,35 @@ export type Database = {
         }
         Relationships: []
       }
+      TokenPrices: {
+        Row: {
+          created_at: string
+          id: number
+          price: number
+          project_id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          price: number
+          project_id: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          price?: number
+          project_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "TokenPrices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "Projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       User: {
         Row: {
           id: number
