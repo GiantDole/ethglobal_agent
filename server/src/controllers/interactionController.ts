@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { processConversation } from '../services/interactionService';
-import { getProjectConversationHistory } from '../services/projectService';
+import { getProjectConversationHistory, getProjectToken } from '../services/projectService';
 import { privyService } from '../services/privyServiceSingleton';
+import { generateSignature as generateUserSignature } from '../services/userService';
 
 export const handleConversation = async (req: Request, res: Response) => {
   const { tokenId } = req.params;
@@ -30,12 +31,17 @@ export const handleConversation = async (req: Request, res: Response) => {
   }
 };
 
-export const getSignature = async (req: Request, res: Response) => {
+//TODO: make sure the user session was successful and all the relevant data is stored in redis
+export const generateSignature = async (req: Request, res: Response) => {
   const { projectId } = req.params;
-  const { answer } = req.body;
+  const { userWalletAddress } = req.body;
 
-  // Validate the input data
-  // Require that the interaction was successful
+  const tokenData = await getProjectToken(projectId);
+  const tokenAddressStr: string = tokenData.token_address;
+
+  const userId = await privyService.getUserIdFromAccessToken(req);
+
+  const signature: string = await generateUserSignature(userId, projectId, userWalletAddress, tokenAddressStr);
+
+  return res.status(200).json({ signature });
 }
-
-

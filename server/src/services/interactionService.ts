@@ -31,4 +31,3 @@ export interface ConversationState {
       decision,
     };
   };
-  
