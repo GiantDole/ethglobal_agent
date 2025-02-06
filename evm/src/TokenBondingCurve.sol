@@ -51,8 +51,9 @@ interface IUniswapV2Router02 {
  * on the inverse bonding curve.
  *
  * Additional features:
- * - Once the target market cap is reached (i.e., maturity of the bonding curve), 
- *   anyone can deploy liquidity by adding the contract's remaining tokens and ETH
+ * - Until liquidity is deployed (i.e., maturity of bonding curve), token transfers between EOAs are locked.
+ *   Only transfers from the contract (i.e., in buy) or to the contract (i.e., in sell) are allowed.
+ * - Once the target market cap is reached, the owner can deploy liquidity by adding the contract's remaining tokens and ETH
  *   into a Uniswap liquidity pool.
  * - The owner may withdraw ETH from the contract and update the agent key.
  */
@@ -361,6 +362,29 @@ contract TokenBondingCurve is ERC20, Ownable {
         (, int256 answer, , , ) = priceFeed.latestRoundData();
         require(answer > 0, "Invalid price data");
         return uint256(answer);
+    }
+
+    /**
+     * @notice Override hook to restrict token transfers until liquidity is deployed.
+     *         Until liquidity is deployed, transfers between externally owned accounts are locked.
+     *         Only transfers from the contract (buy) or to the contract (sell), minting or burning are allowed.
+     */
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override {
+        super._beforeTokenTransfer(from, to, amount);
+
+        // Allow minting and burning.
+        if (from == address(0) || to == address(0)) {
+            return;
+        }
+
+        // Until liquidity is deployed, only allow transfers if either the sender or receiver is the contract.
+        if (!liquidityDeployed) {
+            require(from == address(this) || to == address(this), "Token transfers are locked until liquidity is deployed");
+        }
     }
 
     /// @notice Allow the contract to receive ETH.
