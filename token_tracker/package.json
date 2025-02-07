@@ -4,9 +4,11 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
-    "watch": "ts-node-dev --respawn src/index.ts"
+    "dev": "cross-env NODE_ENV=development nodemon --watch src --exec ts-node src/index.ts",
+    "start": "cross-env NODE_ENV=production pm2 start dist/index.js --name token-tracker --no-daemon",
+    "prod": "npm run build && cross-env NODE_ENV=production pm2 start ecosystem.config.js --env production",
+    "stop": "pm2 stop token-tracker",
+    "restart": "pm2 restart token-tracker"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +20,8 @@
     "ethers": "^6.13.5",
     "pino": "^9.6.0",
     "winston": "^3.17.0",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "pm2": "^5.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",
