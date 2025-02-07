@@ -1,72 +1,76 @@
-import { Token } from '../types/index';
+import type { Database } from '../types/supabase_types';
 import databaseService from './database.service';
 import blockchainService from './blockchain.service';
 import logger from '../config/logger';
 import config from '../config/config';
 
+type Project = Database['public']['Tables']['Projects']['Row'];
+
 class PriceTracker {
-  private activeTokens: Map<number, Token> = new Map();
-  private trackers: Map<number, NodeJS.Timer> = new Map();
+  private activeProjects: Map<number, Project> = new Map();
+  private trackers: Map<number, NodeJS.Timeout> = new Map();
 
   async start(): Promise<void> {
-    await this.updateActiveTokens();
-    // Check for token changes every minute
-    setInterval(() => this.updateActiveTokens(), 60000);
+    await this.updateActiveProjects();
+    // Check for project changes every minute
+    setInterval(() => this.updateActiveProjects(), 60000);
   }
 
-  private async updateActiveTokens(): Promise<void> {
+  private async updateActiveProjects(): Promise<void> {
     try {
-      const tokens = await databaseService.getActiveTokens();
-      const currentTokenIds = new Set(this.activeTokens.keys());
-      const newTokenIds = new Set(tokens.map(t => t.id));
+      const projects = await databaseService.getActiveTokens();
+      const currentProjectIds = new Set(this.activeProjects.keys());
+      const newProjectIds = new Set(projects.map(p => p.id));
 
-      // Stop tracking removed tokens
-      for (const tokenId of currentTokenIds) {
-        if (!newTokenIds.has(tokenId)) {
-          this.stopTracking(tokenId);
+      // Stop tracking removed projects
+      for (const projectId of currentProjectIds) {
+        if (!newProjectIds.has(projectId)) {
+          this.stopTracking(projectId);
         }
       }
 
-      // Start tracking new tokens
-      for (const token of tokens) {
-        if (!currentTokenIds.has(token.id)) {
-          this.startTracking(token);
+      // Start tracking new projects
+      for (const project of projects) {
+        if (!currentProjectIds.has(project.id) && project.token_address) {
+          this.startTracking(project);
         }
       }
 
-      this.activeTokens = new Map(tokens.map(token => [token.id, token]));
+      this.activeProjects = new Map(projects.map(project => [project.id, project]));
     } catch (error) {
-      logger.error('Error updating active tokens:', error);
+      logger.error('Error updating active projects:', error);
     }
   }
 
-  private startTracking(token: Token): void {
-    logger.info(`Starting price tracking for token ${token.symbol} (${token.address})`);
+  private startTracking(project: Project): void {
+    if (!project.token_address) return;
+    
+    logger.info(`Starting price tracking for project ${project.name} (${project.token_address})`);
     
     const interval = setInterval(async () => {
       try {
-        const price = await blockchainService.getTokenPrice(token.address, token.address);
+        const price = await blockchainService.getTokenPrice(project.token_address!);
         
         await databaseService.insertPriceData({
-          token_id: token.id,
+          project_id: project.id,
           price,
-          timestamp: Date.now()
+          created_at: new Date().toISOString()
         });
       } catch (error) {
-        logger.error(`Error tracking price for token ${token.symbol}:`, error);
+        logger.error(`Error tracking price for project ${project.name}:`, error);
       }
     }, config.pollingInterval);
 
-    this.trackers.set(token.id, interval);
+    this.trackers.set(project.id, interval);
   }
 
-  private stopTracking(tokenId: number): void {
-    const interval = this.trackers.get(tokenId);
+  private stopTracking(projectId: number): void {
+    const interval = this.trackers.get(projectId);
     if (interval) {
-      clearInterval(interval as NodeJS.Timeout);
-      this.trackers.delete(tokenId);
-      const token = this.activeTokens.get(tokenId);
-      logger.info(`Stopped tracking token ${token?.symbol || tokenId}`);
+      clearInterval(interval);
+      this.trackers.delete(projectId);
+      const project = this.activeProjects.get(projectId);
+      logger.info(`Stopped tracking project ${project?.name || projectId}`);
     }
   }
 }
