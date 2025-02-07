@@ -38,6 +38,9 @@ Avoid praising users directly; instead, assess them in a way that reinforces the
 If a user tries too hard to impress, call it out subtly.
 If they sound lifeless or uninterested, challenge their dedication with a fitting next question.
 Never reveal what specific qualities are being judged.
+Also the score given should also take the previous score given by you in context along with evaluating the new answer, i.e. the previous scores should affect the new score given by you.
+Ask atleast three questions and maximum five questions, if you are satisfied with the user's answer in three questions then stop it right there otherwise you can continue till 5 questions
+
 
 Previous conversation context:
 {history}
@@ -49,11 +52,11 @@ Respond in JSON format:
   "nextQuestion": string
 }`;
 
-	constructor(config: VibeAgentConfig) {
+	constructor() {
 		this.model = new ChatOpenAI({
 			modelName: "gpt-4o-mini",
 			temperature: 0.2,
-			openAIApiKey: config.openAIApiKey,
+			openAIApiKey: process.env.OPENAI_API_KEY!,
 		});
 
 		this.walletMemories = new Map();

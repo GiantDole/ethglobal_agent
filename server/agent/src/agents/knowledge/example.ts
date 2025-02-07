@@ -1,4 +1,4 @@
-import { VibeAgent } from "./VibeAgent";
+import { KnowledgeAgent } from "./KnowledgeAgent";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -12,9 +12,7 @@ declare global {
 }
 
 async function example() {
-	const agent = new VibeAgent({
-		openAIApiKey: process.env.OPENAI_API_KEY!,
-	});
+	const agent = new KnowledgeAgent();
 
 	const walletAddress = "0x123...";
 

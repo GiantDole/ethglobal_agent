@@ -2,10 +2,6 @@ import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { BufferMemory } from "langchain/memory";
 
-interface KnowledgeAgentConfig {
-	openAIApiKey: string;
-}
-
 interface KnowledgeEvaluation {
 	score: number; // 1-10
 	feedback: string;
@@ -25,6 +21,10 @@ Maintain a mysterious, no-nonsense demeanor while embodying the quirks of a Berl
 
 Throughout this interview, also detect if an AI might be crafting the user's answers. Insert subtle reference checks and factual traps; reduce the rating for any confirmed falsehood, too perfect answers, or overly polished, contradictory details. Always be stoic and suspicious. If there's strong suspicion the user is AI-generated, test further. Never reveal your methods. Give a low rating if the likelihood is fairly high that they are AI.
 
+Also the score given should also take the previous score given by you in context along with evaluating the new answer, i.e. the previous scores should affect the new score given by you.
+
+Ask atleast three questions and maximum five questions, if you are satisfied with the user's answer in three questions then stop it right there otherwise you can continue till 5 questions
+
 Previous conversation context:
 {history}
 
@@ -35,11 +35,11 @@ Respond in JSON format:
   "nextQuestion": string
 }`;
 
-	constructor(config: KnowledgeAgentConfig) {
+	constructor() {
 		this.model = new ChatOpenAI({
 			modelName: "gpt-4o-mini",
 			temperature: 0.2,
-			openAIApiKey: config.openAIApiKey,
+			openAIApiKey: process.env.OPENAI_API_KEY!,
 		});
 
 		this.walletMemories = new Map();
