@@ -11,14 +11,18 @@ class PriceTracker {
   private trackers: Map<number, NodeJS.Timeout> = new Map();
 
   async start(): Promise<void> {
+    logger.info('Starting price tracker service...');
     await this.updateActiveProjects();
     // Check for project changes every minute
     setInterval(() => this.updateActiveProjects(), 60000);
+    logger.info('Price tracker service started successfully');
   }
 
   private async updateActiveProjects(): Promise<void> {
     try {
+      logger.debug('Updating active projects...');
       const projects = await databaseService.getActiveTokens();
+      logger.info(`Found ${projects.length} active projects`);
       const currentProjectIds = new Set(this.activeProjects.keys());
       const newProjectIds = new Set(projects.map(p => p.id));
 
@@ -43,7 +47,10 @@ class PriceTracker {
   }
 
   private startTracking(project: Project): void {
-    if (!project.token_address) return;
+    if (!project.token_address) {
+      logger.warn(`Project ${project.name} (${project.id}) has no token address`);
+      return;
+    }
     
     logger.info(`Starting price tracking for project ${project.name} (${project.token_address})`);
     
