@@ -3,6 +3,8 @@ import React, { useState, useRef } from "react";
 import { MicrophoneIcon } from "@heroicons/react/24/solid";
 import { useParams } from "next/navigation";
 import InteractionClient from "@/clients/Interactions";
+import Spline from '@splinetool/react-spline';
+
 
 const interactionClient = new InteractionClient(
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
@@ -183,7 +185,9 @@ function SpeechInterface() {
           {error}
         </div>
       )}
-
+      <Spline
+        scene="https://prod.spline.design/xbesQBljFFROXI3l/scene.splinecode" 
+      />
       {!currentQuestion ? (
         <button
           onClick={startInteraction}

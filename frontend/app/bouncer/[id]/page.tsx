@@ -3,7 +3,7 @@
 import React from "react";
 import SpeechInterface from "@/components/ui/SpeechInterface";
 // import { useRouter } from "next/navigation";
-import { getCookie } from "cookies-next";
+// import { getCookie } from "cookies-next";
 // import UserClient from "../../../clients/User";
 
 
@@ -33,7 +33,7 @@ export default function BouncerPage() {
 //   const cookieIdToken = getCookie("privy-id-token");
 
   return (
-    <div>
+    <div className="bg-black min-h-screen">
       <SpeechInterface/>
     </div>
   );
