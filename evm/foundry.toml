@@ -3,5 +3,14 @@ src = "src"
 out = "out"
 libs = ["lib"]
 remappings = ['@chainlink/contracts/=lib/chainlink-brownie-contracts/contracts/']
+eth_rpc_url = "$ARBITRUM_SEPOLIA_RPC_URL"  # Use the env var instead of `.env`
+gas_price = 3000000000  # 3 gwei
+timeout = 1000000
+
+[rpc_endpoints]
+arbitrum_sepolia = "$ARBITRUM_SEPOLIA_RPC_URL"
+
+[etherscan]
+arbitrum_sepolia = { key = "$ETHERSCAN_API_KEY" }
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
