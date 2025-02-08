@@ -3,6 +3,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { ConversationHistory } from "../../types/conversation";
 import { ChatOpenAI } from "@langchain/openai";
+import logger from "../../config/logger";
 interface VibeAgentConfig {
 	openAIApiKey: string;
 }
@@ -41,16 +42,15 @@ Never reveal what specific qualities are being judged.
 Also the score given should also take the previous score given by you in context along with evaluating the new answer, i.e. the previous scores should affect the new score given by you.
 Ask atleast three questions and maximum five questions, if you are satisfied with the user's answer in three questions then stop it right there otherwise you can continue till 5 questions
 
-
-Previous conversation context:
-{history}
-
 Respond in JSON format:
 {
   "score": number,
   "feedback": string,
   "nextQuestion": string
-}`;
+}
+  
+When receiving the system message "Requesting first question.", return your first question to initiate the conversation.
+`;
 
 	constructor() {
 		//this.model = new ChatGoogleGenerativeAI({
@@ -92,9 +92,11 @@ Respond in JSON format:
 			);
 		} else {
 			historyMessages.push(
-				new SystemMessage({ content: "Requesting first question..." })
+				new SystemMessage({ content: "Requesting first question." })
 			);
 		}
+
+		logger.info({ historyMessages }, 'Request to Vibe Agent with history.');
 
 		try {
 			const response: any = await this.model.invoke([

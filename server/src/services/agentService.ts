@@ -21,7 +21,7 @@ export class AgentService {
 
 		try {
 			const questionNumber = conversationHistory.length;
-			logger.info({ questionNumber }, 'Running evaluations');
+			logger.info({ questionNumber, conversationHistory, answer }, 'Running evaluations');
 			
 			const [knowledgeEval, vibeEval] = await Promise.all([
 				this.knowledgeAgent.evaluateAnswer(conversationHistory, answer),
@@ -30,7 +30,7 @@ export class AgentService {
 
 			const knowledgeScore = knowledgeEval.score;
 			const vibeScore = vibeEval.score;
-			logger.info({ knowledgeScore, vibeScore }, 'Scores received');
+			logger.info({ knowledgeEval, vibeEval }, 'LLM evaluations complete.');
 
 			// **Check if the user has passed the evaluation**
 			const passed = knowledgeScore >= 6 && vibeScore >= 7;
@@ -50,7 +50,7 @@ export class AgentService {
 			logger.info({ shouldContinue, questionNumber }, 'Continue status');
 
 			// **Immediate failure condition**
-			if (knowledgeScore <= 1 || vibeScore <= 1) {
+			if ((knowledgeScore <= 1 || vibeScore <= 1) && questionNumber > 0) {
 				logger.info({ knowledgeScore, vibeScore }, 'Immediate failure triggered');
 				return {
 					nextMessage: null,

@@ -4,6 +4,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { BufferMemory } from "langchain/memory";
 import { ConversationHistory } from "../../types/conversation";
 import { ChatOpenAI } from "@langchain/openai";
+import logger from "../../config/logger";
 
 interface KnowledgeEvaluation {
 	score: number; // 1-10
@@ -35,7 +36,10 @@ Respond in JSON format, nothing else should be there except the format given bel
   "score": number,
   "feedback": string,
   "nextQuestion": string
-}`;
+}
+  
+When receiving the system message "Requesting first question.", return your first question to initiate the conversation.
+`;
 
 	constructor() {
 		this.model = new ChatOpenAI({
@@ -91,9 +95,11 @@ Respond in JSON format, nothing else should be there except the format given bel
 			);
 		} else {
 			historyMessages.push(
-				new SystemMessage({ content: "Requesting first question..." })
+				new SystemMessage({ content: "Requesting first question." })
 			);
 		}
+
+		logger.info({ historyMessages }, 'Request to Knowledge Agent with history.');
 
 		try {
 			const response: any = await this.model.invoke([
