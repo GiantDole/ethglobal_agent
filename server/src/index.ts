@@ -19,7 +19,6 @@ app.use(cors({
     "http://bouncer-ai.xyz/",
   ],
   credentials: true,
-  exposedHeaders: ['Access-Control-Allow-Credentials']
 }));
 
 app.use(express.json());
