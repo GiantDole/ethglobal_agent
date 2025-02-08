@@ -1,8 +1,8 @@
 import { Client } from "..";
 
 class ProjectClient extends Client {
-  constructor(url: string) {
-    super(`${url}/api/projects`);
+  constructor() {
+    super('/api/projects');
   }
 
   async getAll() {

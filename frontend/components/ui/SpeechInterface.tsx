@@ -11,9 +11,7 @@ declare global {
   }
 }
 
-const interactionClient = new InteractionClient(
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-);
+const interactionClient = new InteractionClient();
 
 function SpeechInterface() {
   const params = useParams();

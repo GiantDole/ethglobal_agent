@@ -30,9 +30,7 @@ type Token = {
   created_at: string;
 };
 
-const projectClient = new ProjectClient(
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
-);
+const projectClient = new ProjectClient();
 
 export default function Page() {
   const [tokens, setTokens] = useState<Token[]>([]);
