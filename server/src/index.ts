@@ -16,9 +16,7 @@ app.use(cors({
   origin: [
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
     "https://bouncer-ai.xyz/",
-    "https://bouncer-ai.xyz",
     "http://bouncer-ai.xyz/",
-    "http://bouncer-ai.xyz"
   ],
   credentials: true,
   exposedHeaders: ['Access-Control-Allow-Credentials']
