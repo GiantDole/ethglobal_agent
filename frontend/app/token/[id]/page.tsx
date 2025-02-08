@@ -1,8 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+
+// Images
+import Connect from "@/assets/header/connect_icon.svg";
+import Logo from "@/assets/header/logo.svg";
+import Net from "@/assets/token_detail/net.svg";
+import Bouncer from "@/assets/token_detail/logo.png";
+import Frame from "@/assets/landing/frame.png";
+import World from "@/assets/landing/world.svg";
+import About from "@/assets/token_detail/about.svg";
+import Tokenomics from "@/assets/token_detail/tokenomics.svg";
+import Bonding from "@/assets/token_detail/bonding.svg";
+import Stats from "@/assets/token_detail/stats.svg";
+import Buy from "@/assets/token_detail/buy.svg";
+import Dyor from "@/assets/token_detail/dyor.svg";
+import Holder from "@/assets/token_detail/holder.svg";
+import Exclusivity from "@/assets/token_detail/exclusivity.svg";
+
+// Clients
 import ProjectClient from "@/clients/Projects";
 
 // Components
@@ -74,85 +93,107 @@ function TokenDetail() {
 
   return (
     <main>
-      <div className="container mx-auto py-12">
-        <Link href="/" className="text-blue-500">
-          Back
-        </Link>
-
-        {/* Add Bouncer Link */}
-        <Link href={`/bouncer/${params.id}`} className="ml-4 text-blue-500">
-          Go to Bouncer
-        </Link>
-
-        {/* Image Banner */}
-        <div className="mt-8">
-          <img
-            src={data.banner_image || "/images/avatar.png"}
-            alt="Banner"
-            className="w-full"
-            style={{ height: "300px", objectFit: "cover" }}
-          />
+      <div className="mb-16">
+        <div className="flex justify-between p-4">
+          <Image src={Logo} alt="Logo" />
+          <Image src={Connect} alt="Connected" />
         </div>
-
-        {/* Two-column layout */}
-        <div className="grid grid-cols-2 gap-8 mt-8">
-          <div>
-            <h1 className="text-3xl font-bold my-6">
-              {data.name} - ${data.token_ticker}
-            </h1>
-            <p>Contract: {data.token_address}</p>
-
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold">About</h2>
-              <p>{data.long_description}</p>
-            </div>
-
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold">Bonding Curve Progress</h2>
-              <div className="w-full bg-gray-200 rounded-full h-4 mt-4 mb-6">
-                <div
-                  className="bg-black h-4 rounded-full transition-all duration-300"
-                  style={{ width: `${data.progress}%` }}
-                ></div>
-              </div>
-              <p>{data.bondingCurve}</p>
+        <div className="container mx-auto">
+          <div className="my-8">
+            <div className="relative h-40 flex items-center justify-center">
+              <Image src={Net} alt="Net" className="absolute" />
+              <Image src={Bouncer} alt="Bouncer" className="absolute" />
             </div>
           </div>
-
-          <div>
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold">Tokenomics</h2>
-              <ul className="list-disc ml-5">
-                {data.tokenomics.map((item: string, index: number) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ul>
+          <div className="flex items-center gap-6 mt-12">
+            <div className="relative flex items-center justify-center">
+              <Image
+                src={"/images/avatar.png"}
+                alt={data.name}
+                width={168}
+                height={168}
+                className="absolute clip ml-[-6px] mt-[1px]"
+              />
+              <Image src={Frame} alt="Frame" className="relative" />
             </div>
-
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold">Holder Distribution</h2>
-              <div className="grid grid-cols-2 font-bold mb-2">
-                <span>Holder</span>
-                <span className="text-right">Percentage</span>
+            <h1 className="text-6xl font-bold">
+              {data.name} - ${data.token_ticker}
+            </h1>
+            <Image src={World} alt="World" />
+          </div>
+          <div className="my-8 py-2 px-3 bg-[#D9D9D9] rounded-md inline-block min-w-[240px] hover:cursor-pointer">
+            <p className="text-black tracking-[2px] text-center">{`${data.token_address.slice(
+              0,
+              8,
+            )}...${data.token_address.slice(-6)}`}</p>
+          </div>
+          <div className="flex gap-6">
+            <div className="flex-1 flex flex-col gap-8">
+              <div>
+                <Image src={About} alt="About" className="mb-4" />
+                <p className="text-base">{data.long_description}</p>
               </div>
-              <ul className="list-none">
-                {data.holderDistribution.map((item: string, index: number) => {
-                  const [holder, percentage] = item.split(": ");
-                  return (
-                    <li key={index} className="grid grid-cols-2">
-                      <span>{holder}</span>
-                      <span className="text-right">{percentage}</span>
-                    </li>
-                  );
-                })}
-              </ul>
+              <div>
+                <Image src={Tokenomics} alt="Tokenomics" className="mb-4" />
+                <ul className="list-disc ml-5">
+                  {data.tokenomics.map((item: string, index: number) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <Image src={Bonding} alt="Bonding" className="mb-4" />
+                <div className="w-full bg-[#424242] h-2 mt-4 mb-6">
+                  <div
+                    className="bg-[#FF8585] h-2 transition-all duration-300"
+                    style={{ width: `${data.progress}%` }}
+                  ></div>
+                </div>
+                <p>{data.bondingCurve}</p>
+              </div>
+              <div>
+                {/* <Image src={Stats} alt="Stats" className="mb-4" /> */}
+              </div>
             </div>
-
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold">Exclusivity</h2>
-              <p>{data.exclusivity.humans} humans got in</p>
-              <p>{data.exclusivity.failRate}% of applicants fail to pass</p>
-              <p>{data.exclusivity.botsFiltered} bots filtered out</p>
+            <div className="flex-1 flex flex-col gap-8">
+              <div>
+                <Link href={`/token/${data.id}/bouncer`}>
+                  <Image src={Buy} alt="Buy" className="mb-4" />
+                </Link>
+              </div>
+              <div>
+                {/* <Image src={Dyor} alt="Dyor" className="mb-4" /> */}
+              </div>
+              <div>
+                <Image src={Holder} alt="Holder" className="mb-4" />
+                <div className="flex items-center justify-between mb-4">
+                  <p>Holder</p>
+                  <p>Percentage</p>
+                </div>
+                <ul className="list-disc ml-5">
+                  {data.holderDistribution.map(
+                    (item: string, index: number) => {
+                      const [holder, percentage] = item.split(": ");
+                      return (
+                        <li key={index}>
+                          <div className="flex items-center justify-between">
+                            <p>{holder}</p>
+                            <p>{percentage}</p>
+                          </div>
+                        </li>
+                      );
+                    },
+                  )}
+                </ul>
+              </div>
+              <div>
+                <Image src={Exclusivity} alt="Exclusivity" className="mb-4" />
+                <div>
+                  <p>{data.exclusivity.humans} humans got in</p>
+                  <p>{data.exclusivity.failRate}% of applicants fail to pass</p>
+                  <p>{data.exclusivity.botsFiltered} bots filtered out</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
