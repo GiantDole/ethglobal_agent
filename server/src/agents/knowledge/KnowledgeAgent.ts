@@ -28,7 +28,7 @@ Also the score given should also take the previous score given by you in context
 
 Ask atleast three questions and maximum five questions, if you are satisfied with the user's answer in three questions then stop it right there otherwise you can continue till 5 questions
 
-Don't return the word json or any other special characters your response should start with { and end with } and inside should be the parameters given in json format
+Don't be too harsh, if the answers are good increase the score, doesn't need to be a perfect answer always.
 Respond in JSON format, nothing else should be there except the format given below:
 {
   "score": number,
@@ -70,6 +70,18 @@ Respond in JSON format, nothing else should be there except the format given bel
 	): Promise<KnowledgeEvaluation> {
 		// const memory = this.getOrCreateMemory(walletAddress);
 		// const history = await memory.loadMemoryVariables({});
+
+		// const systemPrompt = new SystemMessage({
+		// 	content: this.BOUNCER_PROMPT.replace(
+		// 		"{history}",
+		// 		history.chat_history || "No previous context"
+		// 	),
+		// });
+		// const formattedHistory = history.chat_history
+		// 	? history.chat_history
+		// 			.map((msg: any) => (msg.content ? msg.content : ""))
+		// 			.join("\n")
+		//	: "No previous context";
 
 		const systemPrompt = new SystemMessage({
 			content: this.BOUNCER_PROMPT

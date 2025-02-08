@@ -39,8 +39,8 @@ export const getProjectById = async (id: number) => {
 };
 
 export const getProjectConversationHistory = async ({
-  projectId,
-  userId,
+	projectId,
+	userId,
 }: {
   projectId: string;
   userId: string;

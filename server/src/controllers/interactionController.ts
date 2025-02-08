@@ -86,6 +86,18 @@ import { Request, Response } from "express";
 import { privyService } from "../services/privyServiceSingleton";
 import { AgentService } from "../services/agentService";
 
+<<<<<<< HEAD
+=======
+import redis from "../database/redis";
+
+export const getSignature = async (req: Request, res: Response) => {
+	const { projectId } = req.params;
+	const { answer } = req.body;
+
+	// Validate the input data
+	// Require that the interaction was successful
+};
+>>>>>>> 6943f60359155e5515c5f9ec1616761e4572b002
 
 export class InteractionController {
 	private agentService: AgentService;
@@ -95,13 +107,23 @@ export class InteractionController {
 	}
 
 	async evaluateResponse(req: Request, res: Response) {
+		const userId = await privyService.getUserIdFromAccessToken(req);
+		if (!userId) {
+			res.status(401).json({ message: "Unauthorized: Invalid privy token" });
+			return;
+		}
+
 		try {
-			const { walletAddress, question, answer } = req.body;
-			if (!walletAddress) {
-				return res.status(400).json({
-					error: "Wallet Address is required",
+			const sessionKey = `session:${userId}`;
+			const sessionData = await redis.get(sessionKey);
+			if (!sessionData) {
+				res.status(401).json({
+					message: "Unauthorized: Session does not exist or has expired",
 				});
+				return;
 			}
+			const { question, answer } = req.body;
+
 			if (!question) {
 				return res.status(400).json({
 					error: "Question is required",
@@ -115,7 +137,7 @@ export class InteractionController {
 			}
 
 			const result = await this.agentService.evaluateResponse(
-				walletAddress,
+				sessionData,
 				question,
 				answer
 			);
