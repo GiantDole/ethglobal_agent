@@ -8,8 +8,8 @@ import {TokenBondingCurve} from "../src/TokenBondingCurve.sol";
 
 contract DeployTokenBondingCurve is Script {
     // Token parameters
-    string constant TOKEN_NAME = "DoggoByte";
-    string constant TOKEN_SYMBOL = "DGB";
+    string constant TOKEN_NAME = "DopaMeme";
+    string constant TOKEN_SYMBOL = "Dope";
     
     // Bonding curve parameters
     uint256 constant TOTAL_SUPPLY_TOKENS = 1_000_000;    // 1M tokens total
@@ -18,7 +18,7 @@ contract DeployTokenBondingCurve is Script {
     uint256 constant TARGET_MARKET_CAP_USD = 6360e8;     // $6,360 target market cap
     
     // Project identifier
-    string constant PROJECT_NAME = "DoggoByte"; // Used to generate project ID
+    string constant PROJECT_NAME = "DopaMeme"; // Used to generate project ID
 
     // Network-specific addresses
     address constant CHAINLINK_PRICE_FEED = 0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165; // Arbitrum Sepolia ETH/USD
