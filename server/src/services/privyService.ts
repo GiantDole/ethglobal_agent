@@ -60,6 +60,8 @@ export class PrivyService {
   async getUserFromIdentityToken(req: Request): Promise<any> {
     try {
       const idToken = req.cookies['privy-id-token'];
+      console.log("idToken", idToken);
+      console.log("authToken", req.cookies['privy-token']);
       if (!idToken) {
         throw new Error("No valid idToken cookie found.");
       }
