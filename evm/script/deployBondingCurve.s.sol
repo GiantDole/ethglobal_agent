@@ -11,6 +11,12 @@ contract DeployTokenBondingCurve is Script {
     string constant TOKEN_NAME = "DoggoByte";
     string constant TOKEN_SYMBOL = "DGB";
     
+    // Bonding curve parameters
+    uint256 constant TOTAL_SUPPLY_TOKENS = 1_000_000;    // 1M tokens total
+    uint256 constant BASE_PRICE_USD = 0.00106e8;         // $0.00106 initial price
+    uint256 constant SLOPE_USD = 0.0000158e8;            // $0.0000158 price increase per token
+    uint256 constant TARGET_MARKET_CAP_USD = 6360e8;     // $6,360 target market cap
+    
     // Project identifier
     string constant PROJECT_NAME = "DoggoByte"; // Used to generate project ID
 
@@ -45,11 +51,15 @@ contract DeployTokenBondingCurve is Script {
         // Generate project ID using project name and timestamp
         bytes32 projectId = keccak256(abi.encodePacked(PROJECT_NAME, block.timestamp));
         
-        // Deploy new token through factory
+        // Deploy new token through factory with configurable parameters
         address tokenAddress = factory.deployContract(
             projectId,
             TOKEN_NAME,
             TOKEN_SYMBOL,
+            TOTAL_SUPPLY_TOKENS,
+            BASE_PRICE_USD,
+            SLOPE_USD,
+            TARGET_MARKET_CAP_USD,
             CHAINLINK_PRICE_FEED,
             UNISWAP_ROUTER
         );

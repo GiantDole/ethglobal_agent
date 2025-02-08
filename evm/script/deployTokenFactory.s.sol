@@ -15,7 +15,8 @@ contract DeployFactory is Script {
         if (bytes(privateKey).length > 0) {
             deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         } else {
-            deployerPrivateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80; // Default anvil account
+            console.log("PRIVATE_KEY environment variable not set");
+            revert("PRIVATE_KEY environment variable not set");
         }
         
         // Get deployment parameters with default values

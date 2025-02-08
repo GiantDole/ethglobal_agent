@@ -116,11 +116,11 @@ contract TokenBondingCurveTest is Test {
     MockAggregator aggregator;
     MockUniswapRouter uniswapRouter;
 
-    // Updated parameters to match factory constants
-    uint256 constant BASE_PRICE_USD = 0.01e8;     // $0.01
-    uint256 constant SLOPE_USD = 0.00000013e8;    // $0.00000013
-    uint256 constant TARGET_MARKET_CAP_USD = 500000e8; // $500,000
-    uint256 constant TOTAL_SUPPLY_TOKENS = 1_000_000_000; // 1 billion tokens
+    // Updated parameters to match new deployment
+    uint256 constant BASE_PRICE_USD = 0.00106e8;         // $0.00106
+    uint256 constant SLOPE_USD = 0.0000158e8;            // $0.0000158
+    uint256 constant TARGET_MARKET_CAP_USD = 6360e8;     // $6,360
+    uint256 constant TOTAL_SUPPLY_TOKENS = 1_000_000;    // 1M tokens
     
     address owner = address(this);
     address projectLead;
@@ -142,13 +142,17 @@ contract TokenBondingCurveTest is Test {
         // Deploy the mock Uniswap router
         uniswapRouter = new MockUniswapRouter();
 
-        // Deploy bonding curve through factory
+        // Deploy bonding curve through factory with updated parameters
         bytes32 projectId = keccak256("test-project");
         vm.prank(projectLead);
         address payable bondingAddress = payable(factory.deployContract(
             projectId,
             "BondingToken",
             "BOND",
+            TOTAL_SUPPLY_TOKENS,
+            BASE_PRICE_USD,
+            SLOPE_USD,
+            TARGET_MARKET_CAP_USD,
             address(aggregator),
             address(uniswapRouter)
         ));
@@ -603,6 +607,10 @@ contract TokenBondingCurveTest is Test {
             projectId,
             "BondingToken2",
             "BOND2",
+            TOTAL_SUPPLY_TOKENS,
+            BASE_PRICE_USD,
+            SLOPE_USD,
+            TARGET_MARKET_CAP_USD,
             address(aggregator),
             address(uniswapRouter)
         );
@@ -616,18 +624,22 @@ contract TokenBondingCurveTest is Test {
             projectId,
             "BondingToken2",
             "BOND2",
+            TOTAL_SUPPLY_TOKENS,
+            BASE_PRICE_USD,
+            SLOPE_USD,
+            TARGET_MARKET_CAP_USD,
             address(aggregator),
             address(uniswapRouter)
         );
     }
 
-    // Helper function to reach target market cap
+    // Update helper function for new parameters
     function _reachTargetMarketCap() internal {
         // Buy enough tokens to reach target market cap
         address buyer = address(1);
         uint256 nonce = 1;
-        uint256 tokenAllocation = 700_000_000; // 700M tokens
-        uint256 numTokens = 700_000_000;  // Buy 700M tokens to reach target
+        uint256 tokenAllocation = 600_000; // 600k tokens
+        uint256 numTokens = 600_000;  // Buy 600k tokens to reach target
         bytes memory signature = _getSignature(buyer, nonce, tokenAllocation);
 
         // Calculate required ETH (with some buffer)

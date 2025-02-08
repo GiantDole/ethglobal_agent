@@ -88,7 +88,7 @@ async function main() {
     await new Promise((resolve) => setTimeout(resolve, delay));
 
     // Randomly decide whether to perform a buy or sell order (50–50 chance).
-    const doBuy = Math.random() < 0.5;
+    const doBuy = Math.random() < 0.7;
     if (doBuy) {
       console.log("Performing a BUY order...");
       await performBuyOrder(tokenBonding, wallet);

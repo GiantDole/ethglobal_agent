@@ -9,12 +9,6 @@ contract TokenBondingCurveFactory is Ownable {
     address public projectLead;
     address public agent;
     
-    // Fixed parameters for all curves
-    uint256 public constant BASE_PRICE_USD = 0.01e8;     // $0.01
-    uint256 public constant SLOPE_USD = 0.00000013e8;    // $0.00000013 (rounded up slightly for safety)
-    uint256 public constant TARGET_MARKET_CAP_USD = 500000e8; // $500,000
-    uint256 public constant TOTAL_SUPPLY_TOKENS = 1_000_000_000; // 1 billion tokens; 700,000,000 alllocated to bonding curve 
-    
     // Mapping from project ID to deployed contract
     mapping(bytes32 => address) public deployedContracts;
     
@@ -37,21 +31,25 @@ contract TokenBondingCurveFactory is Ownable {
         bytes32 projectId,
         string memory name,
         string memory symbol,
+        uint256 totalSupplyTokens,
+        uint256 basePriceUsd,
+        uint256 slopeUsd,
+        uint256 targetMarketCapUsd,
         address priceFeed,
         address uniswapRouter
     ) external onlyProjectLead returns (address) {
         require(deployedContracts[projectId] == address(0), "Project ID already exists");
         
-        // Deploy new contract
+        // Deploy new contract with configurable parameters
         TokenBondingCurve newContract = new TokenBondingCurve(
             name,
             symbol,
-            TOTAL_SUPPLY_TOKENS,  // Now using the constant
-            BASE_PRICE_USD,
-            SLOPE_USD,
+            totalSupplyTokens,
+            basePriceUsd,
+            slopeUsd,
             address(this),
             priceFeed,
-            TARGET_MARKET_CAP_USD
+            targetMarketCapUsd
         );
         
         // Set Uniswap router
