@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+
+// Add this import at the top
+import TokenSwap from "@/components/TokenSwap";
 
 // Images
 import Net from "@/assets/token_detail/net.svg";
@@ -65,7 +67,6 @@ function TokenDetail() {
             holderDistribution: DISPLAY_DATA.holderDistribution,
             tokenomics: DISPLAY_DATA.tokenomics,
             exclusivity: DISPLAY_DATA.exclusivity,
-            progress: 20, // Hardcoded progress for bonding curve
           });
         }
       } catch (err) {
@@ -136,10 +137,13 @@ function TokenDetail() {
                 <div className="w-full bg-[#424242] h-2 mt-4 mb-6">
                   <div
                     className="bg-[#FF8585] h-2 transition-all duration-300"
-                    style={{ width: `${data.progress}%` }}
+                    style={{ width: `${data.bondingCurveProgress}%` }}
                   ></div>
                 </div>
-                <p>{data.bondingCurve}</p>
+                <div className="flex justify-between items-center">
+                  <p className="font-medium">Current Progress: {data.bondingCurveProgress}%</p>
+                  <p>{data.bondingCurve}</p>
+                </div>
               </div>
               <div>
                 {/* <Image src={Stats} alt="Stats" className="mb-4" /> */}
@@ -147,9 +151,10 @@ function TokenDetail() {
             </div>
             <div className="flex-1 flex flex-col gap-8">
               <div>
-                <Link href={`/token/${data.id}/bouncer`}>
-                  <Image src={Buy} alt="Buy" className="mb-4" />
-                </Link>
+                <Image src={Buy} alt="Buy" className="mb-4" />
+                <div className="w-full p-6 bg-[#1F1F1F] rounded-lg">
+                  <TokenSwap tokenTicker={data.token_ticker} tokenBondingAddress={data.token_address} />
+                </div>
               </div>
               <div>
                 {/* <Image src={Dyor} alt="Dyor" className="mb-4" /> */}
