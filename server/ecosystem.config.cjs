@@ -1,10 +1,12 @@
 module.exports = {
   apps: [
     {
-      name: 'bouncer-ai-dev',
-      script: 'app.js',
+      name: 'berghain-ai-dev',
+      script: 'src/index.ts',
       watch: true,
       ignore_watch: ['node_modules', 'logs'],
+      interpreter: 'node',
+      interpreter_args: '-r ts-node/register',
       env: {
         NODE_ENV: 'development',
         PORT: 8000
@@ -17,8 +19,8 @@ module.exports = {
       retain: '30'
     },
     {
-      name: 'bouncer-ai-prod',
-      script: 'app.js',
+      name: 'berghain-ai-prod',
+      script: 'dist/index.js',
       instances: 'max',
       exec_mode: 'cluster',
       watch: false,
