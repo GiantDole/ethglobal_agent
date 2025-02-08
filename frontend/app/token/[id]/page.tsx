@@ -6,8 +6,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 // Images
-import Connect from "@/assets/header/connect_icon.svg";
-import Logo from "@/assets/header/logo.svg";
 import Net from "@/assets/token_detail/net.svg";
 import Bouncer from "@/assets/token_detail/logo.png";
 import Frame from "@/assets/landing/frame.png";
@@ -25,9 +23,7 @@ import ProjectClient from "@/clients/Projects";
 // Components
 // import Protected from "@/components/utils/Protected";
 
-const projectClient = new ProjectClient(
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
-);
+const projectClient = new ProjectClient();
 
 // Hardcoded display data
 const DISPLAY_DATA = {
