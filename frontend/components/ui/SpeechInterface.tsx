@@ -5,6 +5,11 @@ import { useParams } from "next/navigation";
 import InteractionClient from "@/clients/Interactions";
 import Spline from '@splinetool/react-spline';
 
+declare global {
+  interface Window {
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
+}
 
 const interactionClient = new InteractionClient(
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
@@ -16,7 +21,7 @@ function SpeechInterface() {
   const [interimTranscript, setInterimTranscript] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string>("");
-  const recognitionRef = useRef(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [messages, setMessages] = useState<Array<{text: string, sender: 'user' | 'ai'}>>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -169,12 +174,13 @@ function SpeechInterface() {
     recognition.onresult = (event) => {
       let interim = "";
       for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i]?.isFinal && event.results[i][0]) {
-          const transcript = event.results[i][0].transcript ?? "";
+        const result = event.results[i];
+        if (result && result[0] && result.isFinal) {
+          const transcript = result[0].transcript ?? "";
           handleAnswer(transcript);
           stopListening();
-        } else if (event.results[i][0]) {
-          interim += event.results[i][0].transcript ?? "";
+        } else if (result && result[0]) {
+          interim += result[0].transcript ?? "";
         }
       }
       setInterimTranscript(interim);
