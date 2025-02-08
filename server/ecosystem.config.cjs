@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'berghain-ai-dev',
+      name: 'bouncer-dev',
       script: 'src/index.ts',
       watch: true,
       ignore_watch: ['node_modules', 'logs'],
@@ -19,7 +19,7 @@ module.exports = {
       retain: '30'
     },
     {
-      name: 'berghain-ai-prod',
+      name: 'bouncer-prod',
       script: 'dist/index.js',
       instances: 'max',
       exec_mode: 'cluster',
