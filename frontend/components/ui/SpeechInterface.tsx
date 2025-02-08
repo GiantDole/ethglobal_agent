@@ -17,15 +17,20 @@ function SpeechInterface() {
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string>("");
   const recognitionRef = useRef(null);
+  const [messages, setMessages] = useState<Array<{text: string, sender: 'user' | 'ai'}>>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const startInteraction = async () => {
     try {
       // Send empty string to get first question
       console.log(params.id);
-      const response = await interactionClient.interact(params.id as string, "");
+      const response = await interactionClient.interact(params.id as string, "", true);
       if (response?.message) {
         setCurrentQuestion(response.message);
         speakText(response.message);
+        // Add the first AI message to chat
+        setMessages([{ text: response.message, sender: 'ai' }]);
       }
     } catch (err) {
       setError("Failed to start interaction");
@@ -34,10 +39,15 @@ function SpeechInterface() {
 
   const handleAnswer = async (answer: string) => {
     try {
+      // Add user's speech to messages
+      setMessages(prev => [...prev, { text: answer, sender: 'user' }]);
+      
       const response = await interactionClient.interact(params.id as string, answer);
       if (response?.message) {
         setCurrentQuestion(response.message);
         speakText(response.message);
+        // Add AI's response to messages
+        setMessages(prev => [...prev, { text: response.message, sender: 'ai' }]);
       }
       if (!response?.shouldContinue) {
         // Handle end of conversation
@@ -54,7 +64,7 @@ function SpeechInterface() {
 
   const elevenLabsSpeak = async (text: string) => {
     try {
-      console.log(process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY);
+      setIsPlaying(true);
       const response = await fetch(
         "https://api.elevenlabs.io/v1/text-to-speech/qNkzaJoHLLdpvgh5tISm?output_format=mp3_44100_128",
         {
@@ -82,12 +92,20 @@ function SpeechInterface() {
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
+      
+      audio.onended = () => {
+        setIsPlaying(false);
+      };
+      
       await audio.play();
     } catch (error) {
       console.error("Error using ElevenLabs:", error);
       setError("Failed to generate speech. Falling back to browser synthesis.");
-      // Fallback to browser speech synthesis
+      setIsPlaying(true);
       const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onend = () => {
+        setIsPlaying(false);
+      };
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -178,51 +196,91 @@ function SpeechInterface() {
     }
   };
 
-  return (
-    <div className="max-w-lg mx-auto p-6 space-y-6">
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-          {error}
-        </div>
-      )}
-      <Spline
-        scene="https://prod.spline.design/xbesQBljFFROXI3l/scene.splinecode" 
-      />
-      {!currentQuestion ? (
-        <button
-          onClick={startInteraction}
-          className="w-full py-3 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-        >
-          Start Interaction
-        </button>
-      ) : (
-        <>
-          <div className="p-4 bg-white rounded-lg shadow">
-            <h2 className="text-xl font-bold mb-2">Current Question:</h2>
-            <p className="text-lg">{currentQuestion}</p>
-            {!isListening && (
-              <button
-                onClick={startAnswering}
-                className="mt-4 py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
-              >
-                <MicrophoneIcon className="w-5 h-5" />
-                Start Answering
-              </button>
-            )}
-            {isListening && (
-              <div className="mt-2 flex items-center text-green-600">
-                <MicrophoneIcon className="w-5 h-5 mr-2" />
-                <span>Listening...</span>
-              </div>
-            )}
-          </div>
+  // Keep the scroll effect
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="font-semibold mb-2">Current Input:</p>
-            <p>{interimTranscript || "Waiting for speech..."}</p>
-          </div>
-        </>
-      )}
+  return (
+    <div className="h-[calc(100vh-56px)] flex container mx-auto bg-black overflow-hidden">
+      {/* Left side - Spline */}
+      <div className="w-1/2 h-full overflow-auto">
+        <Spline scene="https://prod.spline.design/1m5ds9rBkE9XTil2/scene.splinecode" />
+      </div>
+
+      {/* Vertical Divider */}
+      <div className="w-[1px] h-full bg-zinc-800"></div>
+
+      {/* Right side - Chat Interface */}
+      <div className="w-1/2 h-full p-6 bg-black overflow-hidden">
+        <div className="h-full flex flex-col">
+          {!currentQuestion ? (
+            // Centered Start Button
+            <div className="h-full flex items-center justify-center">
+              <button
+                onClick={startInteraction}
+                className="py-3 px-6 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Start Interaction
+              </button>
+            </div>
+          ) : (
+            // Chat Interface
+            <>
+              {error && (
+                <div className="p-4 mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+                  {error}
+                </div>
+              )}
+              
+              {/* Chat messages */}
+              <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+                {messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${
+                      message.sender === 'user' ? 'justify-end' : 'justify-start'
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[80%] p-3 rounded-lg ${
+                        message.sender === 'user'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-zinc-800 text-white'
+                      }`}
+                    >
+                      {message.text}
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Microphone button */}
+              <div className="flex justify-center">
+                <button
+                  onClick={isListening ? stopListening : startAnswering}
+                  disabled={isPlaying}
+                  className={`p-4 rounded-full ${
+                    isPlaying 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : isListening 
+                        ? 'bg-red-500 hover:bg-red-600' 
+                        : 'bg-green-500 hover:bg-green-600'
+                  } text-white transition-colors`}
+                >
+                  <MicrophoneIcon className="w-6 h-6" />
+                </button>
+              </div>
+              {isListening && (
+                <div className="text-center mt-2 text-green-600">
+                  {interimTranscript || "Listening..."}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
