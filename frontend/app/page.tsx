@@ -7,8 +7,6 @@ import Image from "next/image";
 import ProjectClient from "../clients/Projects";
 
 // Images
-import Connect from "@/assets/header/connect_icon.svg";
-import Logo from "@/assets/header/logo.svg";
 import Hero from "@/assets/hero/hero.png";
 import Net from "@/assets/hero/net.svg";
 import Badge from "@/assets/hero/hero_badge.svg";
