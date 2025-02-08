@@ -71,18 +71,14 @@ export default function Page() {
 
   return (
     <main>
-      <div className="relative">
+      <div className="relative z-0">
         <Image
           src={Badge}
           alt="Badge"
-          className="absolute top-0 right-[20%] z-0"
+          className="absolute top-0 left-[2%] z-10 sm:right-[20%] left-auto"
         />
-        <div className="flex justify-between p-4">
-          <Image src={Logo} alt="Logo" />
-          <Image src={Connect} alt="Connected" />
-        </div>
-        <div className="mt-36">
-          <Image src={Hero} alt="Hero" className="mx-auto" />
+        <div className="relative pt-48">
+          <Image src={Hero} alt="Hero" className="mx-auto relative z-20" />
         </div>
         <div>
           <Image src={Net} alt="Net" className="ml-auto" />
@@ -94,7 +90,7 @@ export default function Page() {
           <Image src={Active} alt="Active" />
           <Image src={Star} alt="Star" />
         </div>
-        <div className="flex flex-wrap gap-6 mt-5">
+        <div className="flex flex-wrap gap-6 mt-5 justify-center sm:justify-start">
           {tokens.map((token) => (
             <Link key={token.id} href={`/token/${token.id}`}>
               <div className="w-60 p-2 cursor-pointer">
@@ -158,7 +154,7 @@ export default function Page() {
           <Image src={Future} alt="Active" />
           <Image src={Star} alt="Star" />
         </div>
-        <div className="flex flex-wrap gap-6 mt-5">
+        <div className="flex flex-wrap gap-6 mt-5 justify-center sm:justify-start">
           {tokens.map((token) => (
             <Link key={token.id} href={`/token/${token.id}`}>
               <div className="w-60 p-2 cursor-pointer border border-[#FF8585]">

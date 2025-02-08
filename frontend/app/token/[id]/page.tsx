@@ -92,12 +92,8 @@ function TokenDetail() {
   return (
     <main>
       <div className="mb-16">
-        <div className="flex justify-between p-4">
-          <Image src={Logo} alt="Logo" />
-          <Image src={Connect} alt="Connected" />
-        </div>
         <div className="container mx-auto">
-          <div className="my-8">
+          <div className="my-24">
             <div className="relative h-40 flex items-center justify-center">
               <Image src={Net} alt="Net" className="absolute" />
               <Image src={Bouncer} alt="Bouncer" className="absolute" />

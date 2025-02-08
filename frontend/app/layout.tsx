@@ -49,9 +49,11 @@ export default function RootLayout({
       </Head>
       <body>
         <PrivyProvider>
-          <Header />
-          {children}
-          <Footer />
+          <div className="pt-24">
+            <Header />
+            {children}
+            <Footer />
+          </div>
         </PrivyProvider>
       </body>
     </html>
