@@ -1,39 +1,39 @@
-import redis from '../database/redis';
-import supabaseClient from '../database/supabase';
-import { ConversationState } from './interactionService';
+import redis from "../database/redis";
+import supabaseClient from "../database/supabase";
+import { ConversationState } from "./interactionService";
 
 export const getAllProjects = async () => {
-    const { data, error } = await supabaseClient
-        .from('Projects')
-        .select('id, name, author, short_description, token_ticker, status');
+	const { data, error } = await supabaseClient
+		.from("Projects")
+		.select("id, name, author, short_description, token_ticker, status");
 
-    if (error) throw new Error(error.message);
-    return data;
+	if (error) throw new Error(error.message);
+	return data;
 };
 
 export const getProjectById = async (id: number) => {
-    const { data, error } = await supabaseClient
-        .from('Projects')
-        .select('*')
-        .eq('id', id)
-        .single();
+	const { data, error } = await supabaseClient
+		.from("Projects")
+		.select("*")
+		.eq("id", id)
+		.single();
 
-    if (error) throw new Error(error.message);
-    return data;
+	if (error) throw new Error(error.message);
+	return data;
 };
 
 export const getProjectConversationHistory = async ({
-  projectId,
-  userId,
+	projectId,
+	userId,
 }: {
-  projectId: string;
-  userId: string;
+	projectId: string;
+	userId: string;
 }): Promise<ConversationState | null> => {
-  const sessionData = await redis.get(`session:${userId}`);
-  if (!sessionData) return null;
-  
-  const session = JSON.parse(sessionData);
-  return session.projects[projectId] || null;
+	const sessionData = await redis.get(`session:${userId}`);
+	if (!sessionData) return null;
+
+	const session = JSON.parse(sessionData);
+	return session.projects[projectId] || null;
 };
 
 /*
