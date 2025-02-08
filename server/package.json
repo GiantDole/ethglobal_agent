@@ -7,7 +7,13 @@
     "build": "tsc",
     "dev": "cross-env NODE_ENV=development nodemon --watch src --exec ts-node src/index.ts",
     "start": "cross-env NODE_ENV=production pm2 start dist/index.js --name backend --no-daemon",
-    "prod": "npm run build && cross-env NODE_ENV=production pm2 start ecosystem.config.js --env production"
+    "prod": "npm run build && cross-env NODE_ENV=production pm2 start ecosystem.config.cjs --env production",
+    "pm2:dev": "pm2 start ecosystem.config.cjs --only bouncer-dev",
+    "pm2:prod": "pm2 start ecosystem.config.cjs --only bouncer-prod",
+    "pm2:stop": "pm2 stop all",
+    "pm2:delete": "pm2 delete all",
+    "pm2:logs": "pm2 logs",
+    "pm2:status": "pm2 status"
   },
   "dependencies": {
     "@privy-io/server-auth": "^1.18.4",
