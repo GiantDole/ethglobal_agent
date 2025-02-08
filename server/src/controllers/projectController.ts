@@ -4,6 +4,8 @@ import {
   getProjectById,
 } from "../services/projectService";
 import logger from "../config/logger";
+import evmService from "../services/evmService";
+
 
 export const getProjects = async (req: Request, res: Response) => {
   try {
@@ -24,7 +26,11 @@ export const getProject = async (req: Request, res: Response) => {
       res.status(404).json({ error: "Project not found" });
       return;
     }
-    res.status(200).json(token);
+    const bondingCurveProgress = await evmService.getBondingCurveProgress(token.bondingCurveAddress);
+    res.status(200).json({
+      ...token,
+      bondingCurveProgress
+    });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error(`Error fetching project with id ${id}: ${errorMessage}`, error);
