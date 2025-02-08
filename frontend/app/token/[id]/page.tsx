@@ -15,9 +15,7 @@ import World from "@/assets/landing/world.svg";
 import About from "@/assets/token_detail/about.svg";
 import Tokenomics from "@/assets/token_detail/tokenomics.svg";
 import Bonding from "@/assets/token_detail/bonding.svg";
-import Stats from "@/assets/token_detail/stats.svg";
 import Buy from "@/assets/token_detail/buy.svg";
-import Dyor from "@/assets/token_detail/dyor.svg";
 import Holder from "@/assets/token_detail/holder.svg";
 import Exclusivity from "@/assets/token_detail/exclusivity.svg";
 
