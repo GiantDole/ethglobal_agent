@@ -92,18 +92,26 @@ function TokenDetail() {
   if (!data) return <div>No data found</div>;
 
   return (
-    <main>
-      <div className="mb-16">
-        <div className="flex justify-between p-4">
-          <Image src={Logo} alt="Logo" />
-          <Image src={Connect} alt="Connected" />
-        </div>
-        <div className="container mx-auto">
-          <div className="my-8">
-            <div className="relative h-40 flex items-center justify-center">
-              <Image src={Net} alt="Net" className="absolute" />
-              <Image src={Bouncer} alt="Bouncer" className="absolute" />
-            </div>
+    <Protected>
+      <main>
+        <div className="container mx-auto py-12">
+          <Link href="/" className="text-blue-500">
+            Back
+          </Link>
+          
+          {/* Add Bouncer Link */}
+          <Link href={`/token/${params.id}/bouncer`} className="ml-4 text-blue-500">
+            Go to Bouncer
+          </Link>
+
+          {/* Image Banner */}
+          <div className="mt-8">
+            <img
+              src={data.banner_image || "/images/avatar.png"}
+              alt="Banner"
+              className="w-full"
+              style={{ height: '300px', objectFit: 'cover' }}
+            />
           </div>
           <div className="flex items-center gap-6 mt-12">
             <div className="relative flex items-center justify-center">
