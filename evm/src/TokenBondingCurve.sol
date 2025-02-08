@@ -457,4 +457,28 @@ contract TokenBondingCurve is ERC20, Ownable, ReentrancyGuard {
             _transfer(address(this), owner(), remainingTokens);
         }
     }
+
+    /**
+     * @notice Calculate how much more USD/ETH is needed to reach maturity
+     * @return remainingUsd Amount in USD (8 decimals) needed to reach target market cap
+     * @return remainingEth Approximate amount in ETH (18 decimals) needed to reach target market cap
+     */
+    function getRemainingToMaturity() public view returns (uint256 remainingUsd, uint256 remainingEth) {
+        // Calculate current market cap
+        uint256 currentPriceUsd = basePriceUsd + (slopeUsd * tokensSold);
+        uint256 currentMarketCapUsd = tokensSold * currentPriceUsd;
+        
+        // If we've already reached target, return 0
+        if (currentMarketCapUsd >= targetMarketCapUsd) {
+            return (0, 0);
+        }
+        
+        // Calculate remaining USD needed
+        remainingUsd = targetMarketCapUsd - currentMarketCapUsd;
+        
+        // Convert to approximate ETH amount using current ETH price
+        remainingEth = _convertUsdToEth(remainingUsd);
+        
+        return (remainingUsd, remainingEth);
+    }
 }
