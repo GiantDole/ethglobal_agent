@@ -5,7 +5,7 @@ import localFont from "next/font/local";
 import Head from "next/head";
 
 // Components
-import { Header } from "@/components/ui";
+import { Header, Footer } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "Privy Auth Demo",
@@ -51,6 +51,7 @@ export default function RootLayout({
         <PrivyProvider>
           <Header />
           {children}
+          <Footer />
         </PrivyProvider>
       </body>
     </html>
