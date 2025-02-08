@@ -99,7 +99,7 @@ function TokenDetail() {
               <Image src={Bouncer} alt="Bouncer" className="absolute" />
             </div>
           </div>
-          <div className="flex items-center gap-6 mt-12">
+          <div className="flex items-center gap-6 mt-12 p-4 md:p-0">
             <div className="relative flex items-center justify-center">
               <Image
                 src={"/images/avatar.png"}
@@ -110,18 +110,18 @@ function TokenDetail() {
               />
               <Image src={Frame} alt="Frame" className="relative" />
             </div>
-            <h1 className="text-6xl font-bold">
+            <h1 className="text-2xl md:text-6xl font-bold">
               {data.name} - ${data.token_ticker}
             </h1>
             <Image src={World} alt="World" />
           </div>
-          <div className="my-8 py-2 px-3 bg-[#D9D9D9] rounded-md inline-block min-w-[240px] hover:cursor-pointer">
+          <div className="my-8 py-2 px-3 bg-[#D9D9D9] rounded-md inline-block min-w-[240px] hover:cursor-pointer mx-4 md:mx-0">
             <p className="text-black tracking-[2px] text-center">{`${data.token_address.slice(
               0,
               8,
             )}...${data.token_address.slice(-6)}`}</p>
           </div>
-          <div className="flex gap-6">
+          <div className="flex gap-6 flex-col p-4 md:flex-row">
             <div className="flex-1 flex flex-col gap-8">
               <div>
                 <Image src={About} alt="About" className="mb-4" />
