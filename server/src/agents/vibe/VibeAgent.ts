@@ -70,24 +70,27 @@ Respond in JSON format:
 		});
 
 		var historyMessages: any[] = [];
-		var userMessage: any = null;
-
-		if (conversationHistory.length !== 0) {
-			historyMessages = conversationHistory.flatMap(entry => [
+		
+		// Only include completed QA pairs from history
+		historyMessages = conversationHistory.flatMap(entry => 
+			entry.answer ? [
 				new SystemMessage({ content: entry.question }),
-				...(entry.answer ? [new HumanMessage({ content: entry.answer })] : [])
-			]);
+				new HumanMessage({ content: entry.answer })
+			] : []
+		);
 
-			userMessage = new HumanMessage({
-				content: answer
-			});
+		// Add current question and answer
+		if (conversationHistory.length > 0) {
+			historyMessages.push(
+				new SystemMessage({ content: conversationHistory[conversationHistory.length - 1].question }),
+				new HumanMessage({ content: answer })
+			);
 		}
 
 		try {
 			const response: any = await this.model.invoke([
 				systemPrompt,
 				...historyMessages,
-				userMessage,
 			]);
 			let content = response.content.trim();
 			
@@ -96,7 +99,6 @@ Respond in JSON format:
 			}
 
 			const evaluation: VibeEvaluation = JSON.parse(content);
-
 			return evaluation;
 		} catch (error) {
 			console.error("Error evaluating answer:", error);

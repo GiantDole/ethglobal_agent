@@ -18,6 +18,7 @@ export class InteractionController {
 			const userId = await privyService.getUserIdFromAccessToken(req);
 
       let conversationState;
+      //TODO: where is answer added
     
       if (reset) {
         // Reset the conversation if requested
@@ -86,18 +87,6 @@ import { Request, Response } from "express";
 import { privyService } from "../services/privyServiceSingleton";
 import { AgentService } from "../services/agentService";
 
-<<<<<<< HEAD
-=======
-import redis from "../database/redis";
-
-export const getSignature = async (req: Request, res: Response) => {
-	const { projectId } = req.params;
-	const { answer } = req.body;
-
-	// Validate the input data
-	// Require that the interaction was successful
-};
->>>>>>> 6943f60359155e5515c5f9ec1616761e4572b002
 
 export class InteractionController {
 	private agentService: AgentService;
