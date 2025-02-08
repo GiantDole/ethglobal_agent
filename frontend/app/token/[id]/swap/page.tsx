@@ -1,7 +1,7 @@
 'use client';
 
 // import { SwapWidget } from '@uniswap/widgets'
-import '@uniswap/widgets/fonts.css'
+// import '@uniswap/widgets/fonts.css'
 import { DISPLAY_DATA } from '@/constants/mockData'
 
 const SwapPage = () => {
