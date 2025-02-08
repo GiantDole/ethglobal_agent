@@ -79,7 +79,7 @@ function TokenDetail() {
           </Link>
           
           {/* Add Bouncer Link */}
-          <Link href={`/bouncer/${params.id}`} className="ml-4 text-blue-500">
+          <Link href={`/token/${params.id}/bouncer`} className="ml-4 text-blue-500">
             Go to Bouncer
           </Link>
 
