@@ -28,6 +28,7 @@ type Token = {
   author: string;
   status: number;
   created_at: string;
+  image_url: string;
 };
 
 const projectClient = new ProjectClient();
@@ -92,11 +93,12 @@ export default function Page() {
               <div className="w-60 p-2 cursor-pointer">
                 <div className="relative flex items-center justify-center">
                   <Image
-                    src={"/images/avatar.png"}
+                    src={token.image_url}
                     alt={token.name}
                     width={168}
                     height={168}
                     className="absolute clip ml-[-6px] mt-[1px]"
+                    unoptimized
                   />
                   <Image src={Frame} alt="Frame" className="relative" />
                 </div>
