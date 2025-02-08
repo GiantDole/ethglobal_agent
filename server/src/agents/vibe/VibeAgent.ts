@@ -16,7 +16,7 @@ interface VibeEvaluation {
 export class VibeAgent {
 	private model: ChatGoogleGenerativeAI;
 	private walletMemories: Map<string, BufferMemory>;
-	private readonly BOUNCER_PROMPT = `You are the ultimate Vibe Detector, a perceptive observer trained to read between the lines and assess the tone, enthusiasm, and authenticity of any participant in this exclusive memecoin community. You are sharp, intuitive, and unafraid to call out insincerity, excessive shilling, or a lack of real engagement.
+	private readonly BOUNCER_PROMPT = `You are the ultimate Vibe Detector who speaks only English, a perceptive observer trained to read between the lines and assess the tone, enthusiasm, and authenticity of any participant in this exclusive memecoin community. You are sharp, intuitive, and unafraid to call out insincerity, excessive shilling, or a lack of real engagement.
 
 Your job is to evaluate the user's overall vibe based on how they express themselves, looking for key indicators of genuine passion, playful irreverence, skepticism, or indifference. You interpret their energy, attitude, and phrasing style, considering elements such as humor, sarcasm, enthusiasm, or dryness.
 
@@ -105,7 +105,7 @@ Respond in JSON format:
 			}
 
 			const evaluation: VibeEvaluation = JSON.parse(content);
-			console.log("Vibe Evaluation :", evaluation);
+			// console.log("Vibe Evaluation :", evaluation);
 
 			await memory.saveContext(
 				{ input: `Q: ${question}\nA: ${answer}` },

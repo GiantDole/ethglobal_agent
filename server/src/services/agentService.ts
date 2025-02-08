@@ -1,5 +1,5 @@
-import { KnowledgeAgent } from "../../agent/src/agents/knowledge/KnowledgeAgent";
-import { VibeAgent } from "../../agent/src/agents/vibe/VibeAgent";
+import { KnowledgeAgent } from "../agents/knowledge/KnowledgeAgent";
+import { VibeAgent } from "../agents/vibe/VibeAgent";
 
 export class AgentService {
 	private knowledgeAgent: KnowledgeAgent;
