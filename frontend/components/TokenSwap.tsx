@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { TOKEN_BONDING_ABI } from "../constants/abis";
-import { Wallet } from "ethers";
+// import { Wallet } from "ethers";
 
 interface TokenSwapProps {
   tokenTicker: string;
@@ -20,8 +20,8 @@ const TokenSwap = ({ tokenTicker, tokenBondingAddress }: TokenSwapProps) => {
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
   const [contract, setContract] = useState<ethers.Contract | null>(null);
 
-  const agentKey = process.env.NEXT_PUBLIC_AGENT_KEY;
-  const agentWallet = new Wallet(agentKey!);
+//   const agentKey = process.env.NEXT_PUBLIC_AGENT_KEY;
+//   const agentWallet = new Wallet(agentKey!);
 
   useEffect(() => {
     const initializeContract = async () => {
@@ -47,41 +47,41 @@ const TokenSwap = ({ tokenTicker, tokenBondingAddress }: TokenSwapProps) => {
     if (!contract || !signer || !inputAmount || !outputAmount) return;
     
     setLoading(true);
-    try {
-      if (activeTab === "buy") {
-        // Convert ETH input to Wei
-        const depositEth = ethers.parseEther(inputAmount);
-        const tokensToReceive = Math.floor(Number(outputAmount));
+    // try {
+    //   if (activeTab === "buy") {
+    //     // Convert ETH input to Wei
+    //     const depositEth = ethers.parseEther(inputAmount);
+    //     const tokensToReceive = Math.floor(Number(outputAmount));
         
-        // Get and increment nonce
-        const currentNonce = await contract.nonces(await signer.getAddress());
-        const newNonce = currentNonce + 1n;
+    //     // Get and increment nonce
+    //     const currentNonce = await contract.nonces(await signer.getAddress());
+    //     const newNonce = currentNonce + 1n;
         
-        // Get signature from backend API
-        const encodedMessage = AbiCoder.defaultAbiCoder().encode(
-          ["address", "uint256", "address", "uint256"],
-          [signer.address, newNonce, contract.target, tokensToReceive]
-        );
-        const messageHash = keccak256(encodedMessage);
-        const signature = await agentWallet.signMessage(getBytes(messageHash));
+    //     // Get signature from backend API
+    //     const encodedMessage = AbiCoder.defaultAbiCoder().encode(
+    //       ["address", "uint256", "address", "uint256"],
+    //       [signer.address, newNonce, contract.target, tokensToReceive]
+    //     );
+    //     const messageHash = keccak256(encodedMessage);
+    //     const signature = await agentWallet.signMessage(getBytes(messageHash));
         
-        // Execute buy transaction
-        const tx = await contract.buy(tokensToReceive, tokensToReceive, newNonce, signature, {
-          value: depositEth
-        });
-        await tx.wait();
-      } else {
-        // Sell logic
-        const tokensToSell = Math.floor(Number(inputAmount));
-        const minEthToReceive = ethers.parseEther(outputAmount);
-        const tx = await contract.sell(tokensToSell, minEthToReceive);
-        await tx.wait();
-      }
-    } catch (error) {
-      console.error("Transaction failed:", error);
-    } finally {
-      setLoading(false);
-    }
+    //     // Execute buy transaction
+    //     const tx = await contract.buy(tokensToReceive, tokensToReceive, newNonce, signature, {
+    //       value: depositEth
+    //     });
+    //     await tx.wait();
+    //   } else {
+    //     // Sell logic
+    //     const tokensToSell = Math.floor(Number(inputAmount));
+    //     const minEthToReceive = ethers.parseEther(outputAmount);
+    //     const tx = await contract.sell(tokensToSell, minEthToReceive);
+    //     await tx.wait();
+    //   }
+    // } catch (error) {
+    //   console.error("Transaction failed:", error);
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
   return (
