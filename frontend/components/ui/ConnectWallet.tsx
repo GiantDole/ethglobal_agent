@@ -29,8 +29,9 @@ export const ConnectWallet = () => {
   };
 
   const { login } = useLogin({
-    onComplete: ({ isNewUser, wasAlreadyAuthenticated }) => {
+    onComplete: async ({ isNewUser, wasAlreadyAuthenticated }) => {
       if (wasAlreadyAuthenticated) {
+        await userClient.authenticate();
         router.push("/");
       } else {
         if (isNewUser) {
