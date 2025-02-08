@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 // Import the Chainlink Aggregator interface for ETH/USD price feed
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "./TokenBondingCurveFactory.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 using ECDSA for bytes32;
 
@@ -60,7 +61,7 @@ interface IUniswapV2Router02 {
  * - Once the target market cap is reached, the owner can deploy liquidity by adding the contract's remaining tokens and ETH
  *   into a Uniswap liquidity pool.
  */
-contract TokenBondingCurve is ERC20, Ownable {
+contract TokenBondingCurve is ERC20, Ownable, ReentrancyGuard {
     // A mapping to store the last nonce used for each user.
     mapping(address => uint256) public nonces;
 
@@ -86,6 +87,9 @@ contract TokenBondingCurve is ERC20, Ownable {
 
     // Add factory reference
     TokenBondingCurveFactory public immutable factory;
+
+    // Add state variables
+    uint256 private constant PRICE_FRESHNESS_THRESHOLD = 3600; // 1 hour
 
     // ========== Events ==========
     event TokensBought(
@@ -182,7 +186,7 @@ contract TokenBondingCurve is ERC20, Ownable {
         uint256 tokenAllocation,
         uint256 nonce,
         bytes calldata signature
-    ) external payable {
+    ) external payable nonReentrant {
         require(numTokens > 0, "Must buy at least one token");
         require(numTokens <= tokenAllocation, "Cannot buy more than allocation");
         require(nonce > nonces[msg.sender], "Invalid nonce");
@@ -245,7 +249,7 @@ contract TokenBondingCurve is ERC20, Ownable {
      *
      * @param numTokens The number of tokens to sell (in whole tokens).
      */
-    function sell(uint256 numTokens) external {
+    function sell(uint256 numTokens) external nonReentrant {
         require(numTokens > 0, "Must sell at least one token");
 
         uint256 tokenAmount = numTokens * (10 ** decimals());
@@ -300,7 +304,7 @@ contract TokenBondingCurve is ERC20, Ownable {
      * After liquidity is deployed (and only once maturity is reached), any remaining tokens and ETH
      * can later be withdrawn by the owner (via withdrawRemaining).
      */
-    function deployLiquidity() external {
+    function deployLiquidity() external nonReentrant {
         require(!liquidityDeployed, "Liquidity already deployed");
 
         // Calculate the current token price in USD (with 8 decimals).
@@ -356,13 +360,17 @@ contract TokenBondingCurve is ERC20, Ownable {
         // Set a deadline for the liquidity addition (e.g., 15 minutes in the future).
         uint256 deadline = block.timestamp + 15 minutes;
 
+        // Add minimum amounts for slippage protection
+        uint256 minTokens = (tokensToDeploy * 95) / 100;  // 5% slippage
+        uint256 minEth = (usedEth * 95) / 100;  // 5% slippage
+
         // Call the Uniswap router to add liquidity using the calculated token and ETH amounts.
         (uint256 usedTokenAmount, uint256 usedETH, uint256 liquidity) = uniswapRouter.addLiquidityETH{value: usedEth}(
             address(this),
             tokensToDeploy,
-            0,      // Accept any amount of tokens
-            0,      // Accept any amount of ETH
-            owner(), // LP tokens will be sent to the owner
+            minTokens,    // Minimum tokens to add
+            minEth,       // Minimum ETH to add
+            owner(),
             deadline
         );
 
@@ -375,8 +383,9 @@ contract TokenBondingCurve is ERC20, Ownable {
      * @return price The latest price (with 8 decimals).
      */
     function getLatestEthPrice() public view returns (uint256 price) {
-        (, int256 answer, , , ) = priceFeed.latestRoundData();
+        (, int256 answer, , uint256 updatedAt, ) = priceFeed.latestRoundData();
         require(answer > 0, "Invalid price data");
+        //require(block.timestamp - updatedAt <= PRICE_FRESHNESS_THRESHOLD, "Stale price data");
         return uint256(answer);
     }
 
