@@ -1,5 +1,6 @@
 import { KnowledgeAgent } from "../agents/knowledge/KnowledgeAgent";
 import { VibeAgent } from "../agents/vibe/VibeAgent";
+import { ConversationState } from "./interactionService";
 
 export class AgentService {
 	private knowledgeAgent: KnowledgeAgent;
@@ -11,10 +12,12 @@ export class AgentService {
 	}
 
 	async evaluateResponse(
-		walletAddress: string,
 		question: string,
-		answer: string
+		conversationState: ConversationState | null
 	) {
+		const conversationHistory = conversationState?.history || [];
+		const walletAddress = "0x0000000000000000000000000000000000000000";
+		const answer = "test";
 		try {
 			const [knowledgeEval, vibeEval] = await Promise.all([
 				this.knowledgeAgent.evaluateAnswer(walletAddress, question, answer),

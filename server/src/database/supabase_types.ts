@@ -115,18 +115,21 @@ export type Database = {
         Row: {
           id: number
           last_active: string | null
+          nonce: number
           privy_id: string
           registration_date: string
         }
         Insert: {
           id?: number
           last_active?: string | null
+          nonce?: number
           privy_id?: string
           registration_date?: string
         }
         Update: {
           id?: number
           last_active?: string | null
+          nonce?: number
           privy_id?: string
           registration_date?: string
         }
