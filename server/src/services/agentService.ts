@@ -1,7 +1,7 @@
 import { KnowledgeAgent } from "../agents/knowledge/KnowledgeAgent";
 import { VibeAgent } from "../agents/vibe/VibeAgent";
-import redis from "../database/redis";
 import { ConversationState } from "../types/conversation";
+import logger from "../config/logger";
 
 export class AgentService {
 	private knowledgeAgent: KnowledgeAgent;
@@ -30,7 +30,7 @@ export class AgentService {
 			const knowledgeFeedback = knowledgeEval.feedback;
 			const vibeFeedback = vibeEval.feedback;
 
-			console.log(knowledgeEval, vibeEval);
+			logger.info({ knowledgeEval, vibeEval }, 'Evaluation results:');
 
 			// **Check if the user has passed the evaluation**
 			const passed = knowledgeScore >= 6 && vibeScore >= 7;
@@ -76,6 +76,7 @@ export class AgentService {
 					answer: null
 				});
 			}
+			logger.info({conversationHistory}, 'Conversation history after evaluation.');
 
 			conversationState.history = conversationHistory;
 
@@ -101,7 +102,7 @@ export class AgentService {
 				conversationState: conversationState
 			};
 		} catch (error) {
-			console.error("Error in agent evaluation:", error);
+			logger.error('Error in agent evaluation:', error);
 			throw error;
 		}
 	}

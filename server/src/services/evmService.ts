@@ -34,11 +34,11 @@ class EVMService {
                 contract.targetMarketCapUsd()
             ]);
 
-            // Calculate current market cap
-            const currentPriceUsd = basePriceUsd + (slopeUsd * tokensSold);
-            const currentMarketCapUsd = tokensSold * currentPriceUsd;
-            // Calculate percentage (0-100)
-            const progress = Number((currentMarketCapUsd * 100) / targetMarketCapUsd);
+            // Calculate current market cap using BigInt
+            const currentPriceUsd = BigInt(basePriceUsd) + (BigInt(slopeUsd) * BigInt(tokensSold));
+            const currentMarketCapUsd = BigInt(tokensSold) * currentPriceUsd;
+            // Convert to number after calculation
+            const progress = Number((currentMarketCapUsd * BigInt(100)) / BigInt(targetMarketCapUsd));
             
             // Cap the progress at 100%
             return Math.min(progress, 100);

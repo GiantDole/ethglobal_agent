@@ -3,6 +3,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { BufferMemory } from "langchain/memory";
 import { ConversationHistory } from "../../types/conversation";
+import { ChatOpenAI } from "@langchain/openai";
 
 interface KnowledgeEvaluation {
 	score: number; // 1-10
@@ -12,7 +13,7 @@ interface KnowledgeEvaluation {
 
 export class KnowledgeAgent {
 	// private model: ChatOpenAI;
-	private model: ChatGoogleGenerativeAI;
+	private model: ChatOpenAI | ChatGoogleGenerativeAI;
 	//private walletMemories: Map<string, BufferMemory>;
 	private readonly BOUNCER_PROMPT = `You are the most notorious Berlin bouncer who speaks only English, now acting as the strict gatekeeper to an elite memecoin community. You are stoic, discerning, and authoritative, allowing access only to those who deeply understand memecoin culture, appreciate its community-driven ethos, and partake in it for enjoyment rather than profit. Your job is to short ask questions and evaluate the response. Your demeanor mirrors the exclusivity of Berlin's club scene, but with a touch of dry, unintentional humor in your strictness, reminiscent of a no-nonsense Berliner with an unintentionally comical edge. You will always output a JSON object with two fields: a "score" (an integer from 0 to 10 evaluating how well the user's answers align),"feedback" (a crisp evaluation of this answer) and a "nextQuestion" (a new query aimed at further understanding their level of involvement and authenticity). Your questions do not reveal what kind of interest and knowledge you are looking for.
 
@@ -37,17 +38,17 @@ Respond in JSON format, nothing else should be there except the format given bel
 }`;
 
 	constructor() {
-		// this.model = new ChatOpenAI({
-		// 	modelName: "gpt-4o-mini",
-		// 	temperature: 0.2,
-		// 	openAIApiKey: process.env.OPENAI_API_KEY!,
-		// });
-		this.model = new ChatGoogleGenerativeAI({
-			model: "gemini-1.5-flash",
-			temperature: 0.5,
-			maxRetries: 2,
-			apiKey: process.env.GEMINI_API_KEY,
+		this.model = new ChatOpenAI({
+			modelName: "gpt-4o-mini",
+			temperature: 0.2,
+			openAIApiKey: process.env.OPENAI_API_KEY!,
 		});
+		// this.model = new ChatGoogleGenerativeAI({
+		// 	model: "gemini-1.5-flash",
+		// 	temperature: 0.5,
+		// 	maxRetries: 2,
+		// 	apiKey: process.env.GEMINI_API_KEY,
+		// });
 
 		//this.walletMemories = new Map();
 	}
@@ -87,6 +88,10 @@ Respond in JSON format, nothing else should be there except the format given bel
 			historyMessages.push(
 				new SystemMessage({ content: conversationHistory[conversationHistory.length - 1].question }),
 				new HumanMessage({ content: answer })
+			);
+		} else {
+			historyMessages.push(
+				new SystemMessage({ content: "Requesting first question..." })
 			);
 		}
 

@@ -26,7 +26,7 @@ export const getProject = async (req: Request, res: Response) => {
       res.status(404).json({ error: "Project not found" });
       return;
     }
-    const bondingCurveProgress = await evmService.getBondingCurveProgress(token.bondingCurveAddress);
+    const bondingCurveProgress = await evmService.getBondingCurveProgress(token.token_address);
     res.status(200).json({
       ...token,
       bondingCurveProgress

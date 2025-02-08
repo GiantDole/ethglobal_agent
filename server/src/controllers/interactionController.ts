@@ -3,6 +3,7 @@ import { getProjectConversationHistory, getProjectToken, resetProjectConversatio
 import { privyService } from '../services/privyServiceSingleton';
 import { generateSignature as generateUserSignature } from '../services/userService';
 import { AgentService } from '../services/agentService';
+import logger from '../config/logger';
 
 export class InteractionController {
   private agentService: AgentService;
@@ -16,6 +17,8 @@ export class InteractionController {
 			const { projectId } = req.params;
 			var { answer, reset } = req.body;
 			const userId = await privyService.getUserIdFromAccessToken(req);
+
+      logger.info({user: userId, answer, projectId}, 'Evaluating user response for project.');
 
       let conversationState;
       //TODO: where is answer added
@@ -31,6 +34,10 @@ export class InteractionController {
         return res.status(400).json({ error: 'Missing user input' });
       }
 
+      if(conversationState.history.length === 0) {
+        answer = "Requesting first question...";
+      }
+      
       const result = await this.agentService.evaluateResponse(answer, conversationState);
 
       await updateProjectConversationHistory({
