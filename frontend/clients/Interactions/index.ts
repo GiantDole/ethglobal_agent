@@ -5,7 +5,7 @@ class InteractionClient extends Client {
     super(`${url}/api/interaction`);
   }
 
-  async interact(projectId: string, userInput: string) {
+  async interact(projectId: string, userInput: string, reset: boolean = false) {
     return this.request(`/${projectId}`, {
       method: 'POST',
       credentials: 'include',
@@ -15,6 +15,7 @@ class InteractionClient extends Client {
       },
       body: JSON.stringify({
         "answer": userInput,
+        "reset": reset,
       }),
     });
   }
