@@ -13,9 +13,16 @@ const port = process.env.PORT || 3000;
 
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+  origin: [
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+    "https://bouncer-ai.xyz/",
+    "https://bouncer-ai.xyz",
+    "http://bouncer-ai.xyz/",
+    "http://bouncer-ai.xyz"
+  ],
   credentials: true
 }));
+
 app.use(express.json());
 
 
