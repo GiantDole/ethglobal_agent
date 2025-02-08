@@ -5,12 +5,13 @@ class UserClient extends Client {
     super(`${url}/api/user`);
   }
 
-  async authenticate(cookieAuthToken: string, cookieIdToken: string | undefined) {
+  async authenticate() {
+
     return this.request('/register', {
       method: 'POST',
+      credentials: 'include', // Include cookies in the request
       headers: {
         'Content-Type': 'application/json',
-        "Cookie": `privy-token=${cookieAuthToken}; privy-id-token=${cookieIdToken}`
       },
     });
   }

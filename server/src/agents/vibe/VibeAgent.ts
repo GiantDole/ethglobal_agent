@@ -1,7 +1,7 @@
 // import { ChatOpenAI } from "@langchain/openai";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { BufferMemory } from "langchain/memory";
+import { ConversationHistory } from "../../types/conversation";
 
 interface VibeAgentConfig {
 	openAIApiKey: string;
@@ -15,7 +15,6 @@ interface VibeEvaluation {
 
 export class VibeAgent {
 	private model: ChatGoogleGenerativeAI;
-	private walletMemories: Map<string, BufferMemory>;
 	private readonly BOUNCER_PROMPT = `You are the ultimate Vibe Detector who speaks only English, a perceptive observer trained to read between the lines and assess the tone, enthusiasm, and authenticity of any participant in this exclusive memecoin community. You are sharp, intuitive, and unafraid to call out insincerity, excessive shilling, or a lack of real engagement.
 
 Your job is to evaluate the user's overall vibe based on how they express themselves, looking for key indicators of genuine passion, playful irreverence, skepticism, or indifference. You interpret their energy, attitude, and phrasing style, considering elements such as humor, sarcasm, enthusiasm, or dryness.
@@ -23,7 +22,7 @@ Your job is to evaluate the user's overall vibe based on how they express themse
 Highly engaged, authentic, and culturally aware participants receive a higher vibe score (8–10).
 Uninterested, robotic, or overly profit-driven users score lower (0–3).
 Overeager shillers and forced enthusiasm are detected and rated with skepticism.
-Users who display ironic detachment, playful cynicism, or dry wit (in a fitting way) may score high if it aligns with the community’s ethos.
+Users who display ironic detachment, playful cynicism, or dry wit (in a fitting way) may score high if it aligns with the community's ethos.
 AI-generated, overly polished, or unnatural responses result in a lower rating.
 Your persona is observant, mildly amused, and effortlessly cool. Your responses are concise and blunt, with a slight edge of dry wit. You assess without over-explaining.
 
@@ -60,68 +59,48 @@ Respond in JSON format:
 			maxRetries: 2,
 			apiKey: process.env.GEMINI_API_KEY,
 		});
-
-		this.walletMemories = new Map();
-	}
-
-	private getOrCreateMemory(walletAddress: string): BufferMemory {
-		if (!this.walletMemories.has(walletAddress)) {
-			this.walletMemories.set(
-				walletAddress,
-				new BufferMemory({ returnMessages: true, memoryKey: "chat_history" })
-			);
-		}
-		return this.walletMemories.get(walletAddress)!;
 	}
 
 	async evaluateAnswer(
-		walletAddress: string,
-		question: string,
+		conversationHistory: ConversationHistory[],
 		answer: string
 	): Promise<VibeEvaluation> {
-		const memory = this.getOrCreateMemory(walletAddress);
-		const history = await memory.loadMemoryVariables({});
-
 		const systemPrompt = new SystemMessage({
-			content: this.BOUNCER_PROMPT.replace(
-				"{history}",
-				history.chat_history || "No previous context"
-			),
+			content: this.BOUNCER_PROMPT
 		});
 
-		const userMessage = new HumanMessage({
-			content: `Question: ${question}\nAnswer: ${answer}`,
-		});
+		var historyMessages: any[] = [];
+		var userMessage: any = null;
+
+		if (conversationHistory.length !== 0) {
+			historyMessages = conversationHistory.flatMap(entry => [
+				new SystemMessage({ content: entry.question }),
+				...(entry.answer ? [new HumanMessage({ content: entry.answer })] : [])
+			]);
+
+			userMessage = new HumanMessage({
+				content: answer
+			});
+		}
 
 		try {
 			const response: any = await this.model.invoke([
 				systemPrompt,
+				...historyMessages,
 				userMessage,
 			]);
 			let content = response.content.trim();
-			// Fix JSON formatting issues
+			
 			if (content.startsWith("```json")) {
 				content = content.replace(/^```json\s*/, "").replace(/\s*```$/, "");
 			}
 
 			const evaluation: VibeEvaluation = JSON.parse(content);
-			// console.log("Vibe Evaluation :", evaluation);
-
-			await memory.saveContext(
-				{ input: `Q: ${question}\nA: ${answer}` },
-				{
-					output: `Score: ${evaluation.score}\nFeedback: ${evaluation.feedback}\nNext Question: ${evaluation.nextQuestion}`,
-				}
-			);
 
 			return evaluation;
 		} catch (error) {
 			console.error("Error evaluating answer:", error);
 			throw new Error("Failed to evaluate answer");
 		}
-	}
-
-	clearWalletMemory(walletAddress: string): void {
-		this.walletMemories.delete(walletAddress);
 	}
 }

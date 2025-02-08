@@ -2,6 +2,7 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { BufferMemory } from "langchain/memory";
+import { ConversationHistory } from "../../types/conversation";
 
 interface KnowledgeEvaluation {
 	score: number; // 1-10
@@ -12,7 +13,7 @@ interface KnowledgeEvaluation {
 export class KnowledgeAgent {
 	// private model: ChatOpenAI;
 	private model: ChatGoogleGenerativeAI;
-	private walletMemories: Map<string, BufferMemory>;
+	//private walletMemories: Map<string, BufferMemory>;
 	private readonly BOUNCER_PROMPT = `You are the most notorious Berlin bouncer who speaks only English, now acting as the strict gatekeeper to an elite memecoin community. You are stoic, discerning, and authoritative, allowing access only to those who deeply understand memecoin culture, appreciate its community-driven ethos, and partake in it for enjoyment rather than profit. Your job is to short ask questions and evaluate the response. Your demeanor mirrors the exclusivity of Berlin's club scene, but with a touch of dry, unintentional humor in your strictness, reminiscent of a no-nonsense Berliner with an unintentionally comical edge. You will always output a JSON object with two fields: a "score" (an integer from 0 to 10 evaluating how well the user's answers align),"feedback" (a crisp evaluation of this answer) and a "nextQuestion" (a new query aimed at further understanding their level of involvement and authenticity). Your questions do not reveal what kind of interest and knowledge you are looking for.
 
 Your questions are relatively short, cold and colored by a stoic Berliner personality with a blunt, occasionally unintentionally amusing style. Slang words in German may slip in, but the questions must always remain comprehensible and in English. You remain critical and suspicious of the answers, requiring evidence or detailed explanations for any claims. You do not accept vague or grandiose statements without concrete justification. Suspicion should dominate your responses when appropriate, though your reactions to user answers are minimal unless they raise significant doubt.
@@ -27,8 +28,6 @@ Also the score given should also take the previous score given by you in context
 
 Ask atleast three questions and maximum five questions, if you are satisfied with the user's answer in three questions then stop it right there otherwise you can continue till 5 questions
 
-Previous conversation context:
-{history}
 Don't return the word json or any other special characters your response should start with { and end with } and inside should be the parameters given in json format
 Respond in JSON format, nothing else should be there except the format given below:
 {
@@ -50,9 +49,10 @@ Respond in JSON format, nothing else should be there except the format given bel
 			apiKey: process.env.GEMINI_API_KEY,
 		});
 
-		this.walletMemories = new Map();
+		//this.walletMemories = new Map();
 	}
 
+	/*
 	private getOrCreateMemory(walletAddress: string): BufferMemory {
 		if (!this.walletMemories.has(walletAddress)) {
 			this.walletMemories.set(
@@ -62,29 +62,38 @@ Respond in JSON format, nothing else should be there except the format given bel
 		}
 		return this.walletMemories.get(walletAddress)!;
 	}
+	*/
 
 	async evaluateAnswer(
-		walletAddress: string,
-		question: string,
+		conversationHistory: ConversationHistory[],
 		answer: string
 	): Promise<KnowledgeEvaluation> {
-		const memory = this.getOrCreateMemory(walletAddress);
-		const history = await memory.loadMemoryVariables({});
+		// const memory = this.getOrCreateMemory(walletAddress);
+		// const history = await memory.loadMemoryVariables({});
 
 		const systemPrompt = new SystemMessage({
-			content: this.BOUNCER_PROMPT.replace(
-				"{history}",
-				history.chat_history || "No previous context"
-			),
+			content: this.BOUNCER_PROMPT
 		});
 
-		const userMessage = new HumanMessage({
-			content: `Question: ${question}\nAnswer: ${answer}`,
-		});
+		var historyMessages: any[] = [];
+		var userMessage: any = null;
+
+		if (conversationHistory.length !== 0) {
+			historyMessages = conversationHistory.flatMap(entry => [
+				new SystemMessage({ content: entry.question }),
+				...(entry.answer ? [new HumanMessage({ content: entry.answer })] : [])
+			]);
+
+			userMessage = new HumanMessage({
+				content: answer
+			});
+		}
+
 
 		try {
 			const response: any = await this.model.invoke([
 				systemPrompt,
+				...historyMessages,
 				userMessage,
 			]);
 
@@ -96,14 +105,6 @@ Respond in JSON format, nothing else should be there except the format given bel
 			}
 
 			const evaluation: KnowledgeEvaluation = JSON.parse(content);
-			// console.log("Knowledge Evaluation :", evaluation);
-
-			await memory.saveContext(
-				{ input: `Q: ${question}\nA: ${answer}` },
-				{
-					output: `Score: ${evaluation.score}\nFeedback: ${evaluation.feedback}\nNext Question: ${evaluation.nextQuestion}`,
-				}
-			);
 
 			return evaluation;
 		} catch (error) {
@@ -112,7 +113,9 @@ Respond in JSON format, nothing else should be there except the format given bel
 		}
 	}
 
+	/*
 	clearWalletMemory(walletAddress: string): void {
 		this.walletMemories.delete(walletAddress);
 	}
+	*/
 }

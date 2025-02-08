@@ -1,6 +1,6 @@
 import { KnowledgeAgent } from "../agents/knowledge/KnowledgeAgent";
 import { VibeAgent } from "../agents/vibe/VibeAgent";
-import { ConversationState } from "./interactionService";
+import { ConversationState } from "../types/conversation";
 
 export class AgentService {
 	private knowledgeAgent: KnowledgeAgent;
@@ -12,29 +12,37 @@ export class AgentService {
 	}
 
 	async evaluateResponse(
-		question: string,
-		conversationState: ConversationState | null
+		answer: string,
+		conversationState: ConversationState
 	) {
-		const conversationHistory = conversationState?.history || [];
-		const walletAddress = "0x0000000000000000000000000000000000000000";
-		const answer = "test";
+		const conversationHistory = conversationState.history;
+
 		try {
 			const [knowledgeEval, vibeEval] = await Promise.all([
-				this.knowledgeAgent.evaluateAnswer(walletAddress, question, answer),
-				this.vibeAgent.evaluateAnswer(walletAddress, question, answer),
+				this.knowledgeAgent.evaluateAnswer(conversationHistory, answer),
+				this.vibeAgent.evaluateAnswer(conversationHistory, answer),
 			]);
 			console.log(knowledgeEval, vibeEval);
 
+			const nextQuestion = knowledgeEval.score > vibeEval.score
+				? vibeEval.nextQuestion
+				: knowledgeEval.nextQuestion;
+
+			conversationHistory.push({
+				question: nextQuestion,
+				answer: null
+			});
+
+			conversationState.history = conversationHistory;
+
 			return {
-				nextMessage:
-					knowledgeEval.score > vibeEval.score
-						? vibeEval.nextQuestion
-						: knowledgeEval.nextQuestion,
+				nextMessage: nextQuestion,
 				shouldContinue: knowledgeEval.score >= 1 && vibeEval.score >= 1,
 				decision:
 					!knowledgeEval.nextQuestion || !vibeEval.nextQuestion
 						? "complete"
 						: "pending",
+				conversationState
 			};
 		} catch (error) {
 			console.error("Error in agent evaluation:", error);
@@ -42,8 +50,4 @@ export class AgentService {
 		}
 	}
 
-	clearMemory(walletAddress: string) {
-		this.knowledgeAgent.clearWalletMemory(walletAddress);
-		this.vibeAgent.clearWalletMemory(walletAddress);
-	}
 }

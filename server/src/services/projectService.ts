@@ -1,6 +1,6 @@
 import redis from '../database/redis';
 import supabaseClient from '../database/supabase';
-import { ConversationState } from './interactionService';
+import { ConversationState, SessionData } from '../types/conversation';
 
 export const getAllProjects = async () => {
   try {
@@ -44,13 +44,23 @@ export const getProjectConversationHistory = async ({
 }: {
   projectId: string;
   userId: string;
-}): Promise<ConversationState | null> => {
+}): Promise<ConversationState> => {
   try {
     const sessionData = await redis.get(`session:${userId}`);
-    if (!sessionData) return null;
+    if (!sessionData) throw new Error('User session not found');
 
     const session = JSON.parse(sessionData);
-    return session.projects[projectId] || null;
+    var projectState = session.projects[projectId];
+    if (!projectState) {
+        projectState = {
+            history: [],
+            final: false,
+            access: false,
+            signature: "",
+            tokenAllocation: 0
+        };
+    }
+    return projectState;
   } catch (err) {
     throw new Error(
       `Failed to get conversation history for projectId ${projectId} and userId ${userId}: ${
@@ -81,6 +91,49 @@ export const getProjectToken = async (projectId: string) => {
       }`
     );
   }
+};
+
+export const updateProjectConversationHistory = async ({
+  projectId,
+  userId,
+  conversationState,
+}: {
+  projectId: string;
+  userId: string;
+  conversationState: ConversationState;
+}): Promise<void> => {
+  const sessionData = await redis.get(`session:${userId}`);
+  if (!sessionData) throw new Error('Session not found');
+  
+  const session: SessionData = JSON.parse(sessionData);
+  session.projects[projectId] = conversationState;
+  
+  await redis.set(`session:${userId}`, JSON.stringify(session));
+};
+
+export const resetProjectConversation = async ({
+  projectId,
+  userId,
+}: {
+  projectId: string;
+  userId: string;
+}): Promise<ConversationState> => {
+  const sessionData = await redis.get(`session:${userId}`);
+  if (!sessionData) throw new Error('Session not found');
+  
+  const session: SessionData = JSON.parse(sessionData);
+  const newState: ConversationState = {
+    history: [],
+    final: false,
+    access: false,
+    signature: "",
+    tokenAllocation: 0
+  };
+  
+  session.projects[projectId] = newState;
+  await redis.set(`session:${userId}`, JSON.stringify(session));
+  
+  return newState;
 };
 
 /*

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getProjectConversationHistory, getProjectToken } from '../services/projectService';
+import { getProjectConversationHistory, getProjectToken, resetProjectConversation, updateProjectConversationHistory } from '../services/projectService';
 import { privyService } from '../services/privyServiceSingleton';
 import { generateSignature as generateUserSignature } from '../services/userService';
 import { AgentService } from '../services/agentService';
@@ -13,18 +13,31 @@ export class InteractionController {
 
 	async evaluateResponse(req: Request, res: Response): Promise<Response> {
 		try {
-			const { tokenId } = req.params;
-			const { userInput } = req.body;
+			const { projectId } = req.params;
+			var { answer, reset } = req.body;
 			const userId = await privyService.getUserIdFromAccessToken(req);
 
-      const conversationHistory = await getProjectConversationHistory({ projectId: tokenId, userId });
-      
-      // Validate input early
-      if (conversationHistory && !userInput) {
+      let conversationState;
+    
+      if (reset) {
+        // Reset the conversation if requested
+        conversationState = await resetProjectConversation({ projectId, userId });
+      } else {
+        conversationState = await getProjectConversationHistory({ projectId, userId });
+      }
+
+      if (conversationState.history.length !== 0 && !answer) {
         return res.status(400).json({ error: 'Missing user input' });
       }
 
-      const result = await this.agentService.evaluateResponse(userInput, conversationHistory);
+      const result = await this.agentService.evaluateResponse(answer, conversationState);
+
+      await updateProjectConversationHistory({
+        projectId,
+        userId,
+        conversationState: result.conversationState
+      });
+
       return res.status(200).json({
         message: result.nextMessage,
         shouldContinue: result.shouldContinue,
