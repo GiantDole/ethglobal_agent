@@ -19,33 +19,42 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
       !req.cookies['privy-token'] ||
       !req.cookies['privy-id-token']
     ) {
-      logger.warn("Unauthorized: Missing required cookies");
+      logger.warn({ cookies: req.cookies }, "Unauthorized: Missing required cookies");
       return res.status(401).json({ error: 'Unauthorized: Missing required cookies' });
     }
 
+    logger.info({ cookies: req.cookies }, 'Starting user registration process');
+    
     // Verify and extract user information.
-    const authTokenClaims = await privyService.verifyAccessToken(req);
-    const userInfo = await privyService.getUserFromIdentityToken(req);
-    const userId = userInfo.id;
-    if (!userId) {
-      logger.warn({ authTokenClaims, userInfo }, "Register: No user id found in token.");
-      return res.status(400).json({ error: 'User id not found in token' });
+    try {
+      const authTokenClaims = await privyService.verifyAccessToken(req);
+      const userInfo = await privyService.getUserFromIdentityToken(req);
+      logger.info('User info retrieved successfully', { userId: userInfo.id });
+      const userId = userInfo.id;
+      if (!userId) {
+        logger.warn({ authTokenClaims, userInfo }, "Register: No user id found in token.");
+        return res.status(400).json({ error: 'User id not found in token' });
+      }
+
+      // Register or reset the user's session.
+      await registerSession(userId);
+      logger.info({ user: userId, wallet: userInfo.wallet }, "Register: User session successfully registered.");
+
+      // Create the user in Supabase if they don't exist.
+      const exists = await userExistsWithPrivyId(userId);
+      if (!exists) {
+        await createUserWithAccounts(userInfo);
+      }
+
+      return res.status(200).json({ message: 'User registered successfully' });
+    } catch (privyError) {
+      logger.error({ error: privyError }, 'Privy service error');
+      return res.status(401).json({ error: 'Authentication failed' });
     }
 
-    // Register or reset the user's session.
-    await registerSession(userId);
-    logger.info({ user: userId, wallet: userInfo.wallet }, "Register: User session successfully registered.");
-
-    // Create the user in Supabase if they don't exist.
-    const exists = await userExistsWithPrivyId(userId);
-    if (!exists) {
-      await createUserWithAccounts(userInfo);
-    }
-
-    return res.status(200).json({ message: 'User registered successfully' });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error(`Error in registerUser controller: ${errorMessage}`, error);
+    logger.error({ error: errorMessage }, 'Error in registerUser controller:');
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }; 

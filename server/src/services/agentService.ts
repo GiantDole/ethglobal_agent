@@ -17,9 +17,12 @@ export class AgentService {
 		conversationState: ConversationState
 	) {
 		const conversationHistory = conversationState.history;
+		logger.info({ questionNumber: conversationHistory.length, answer }, 'Starting evaluation');
 
 		try {
 			const questionNumber = conversationHistory.length;
+			logger.info({ questionNumber }, 'Running evaluations');
+			
 			const [knowledgeEval, vibeEval] = await Promise.all([
 				this.knowledgeAgent.evaluateAnswer(conversationHistory, answer),
 				this.vibeAgent.evaluateAnswer(conversationHistory, answer),
@@ -27,41 +30,40 @@ export class AgentService {
 
 			const knowledgeScore = knowledgeEval.score;
 			const vibeScore = vibeEval.score;
-			const knowledgeFeedback = knowledgeEval.feedback;
-			const vibeFeedback = vibeEval.feedback;
-
-			logger.info({ knowledgeEval, vibeEval }, 'Evaluation results:');
+			logger.info({ knowledgeScore, vibeScore }, 'Scores received');
 
 			// **Check if the user has passed the evaluation**
 			const passed = knowledgeScore >= 6 && vibeScore >= 7;
+			logger.info({ passed, questionNumber }, 'Pass status');
 
-			// **Determine if the user should continue based on question number**
+			// **Determine if the user should continue**
 			let shouldContinue = false;
 			if (questionNumber < 3) {
-				shouldContinue = true; // Always continue before question 3
+				shouldContinue = true;
 			} else if (questionNumber === 3) {
 				shouldContinue = knowledgeScore >= 4 && vibeScore >= 5;
 			} else if (questionNumber === 4) {
 				shouldContinue = knowledgeScore >= 5 && vibeScore >= 6;
 			} else if (questionNumber === 5) {
-				shouldContinue = false; // Must pass (score >= 8), otherwise fail
+				shouldContinue = false;
 			}
+			logger.info({ shouldContinue, questionNumber }, 'Continue status');
 
 			// **Immediate failure condition**
 			if (knowledgeScore <= 1 || vibeScore <= 1) {
+				logger.info({ knowledgeScore, vibeScore }, 'Immediate failure triggered');
 				return {
 					nextMessage: null,
 					decision: "failed",
-					knowledgeFeedback: knowledgeFeedback,
-					vibeFeedback: vibeFeedback,
+					knowledgeFeedback: knowledgeEval.feedback,
+					vibeFeedback: vibeEval.feedback,
 					shouldContinue: false,
 					conversationState: conversationState
 				};
 			}
 
-			// After evaluation, add both the last answer and the next question
 			if (conversationHistory.length > 0) {
-				// Add the answer to the last question
+				logger.info({ answer, historyLength: conversationHistory.length }, 'Adding answer to history');
 				conversationHistory[conversationHistory.length - 1].answer = answer;
 			}
 
@@ -71,6 +73,7 @@ export class AgentService {
 					? vibeEval.nextQuestion
 					: knowledgeEval.nextQuestion;
 				
+				logger.info({ nextQuestion }, 'Adding next question');
 				conversationHistory.push({
 					question: nextQuestion,
 					answer: null
@@ -82,25 +85,30 @@ export class AgentService {
 
 			// **Handle failure case**
 			if (!shouldContinue && !passed) {
+				logger.info('Evaluation failed', { shouldContinue, passed });
 				return {
 					nextMessage: null,
 					decision: "failed",
-					knowledgeFeedback: knowledgeFeedback,
-					vibeFeedback: vibeFeedback,
+					knowledgeFeedback: knowledgeEval.feedback,
+					vibeFeedback: vibeEval.feedback,
+					shouldContinue: false,
 					conversationState: conversationState
 				};
 			}
 
-			return {
+			const result = {
 				nextMessage: passed ? null : knowledgeEval.score > vibeEval.score
 					? vibeEval.nextQuestion
 					: knowledgeEval.nextQuestion,
 				decision: passed ? "complete" : "pending",
-				knowledgeFeedback: knowledgeFeedback,
-				vibeFeedback: vibeFeedback,
+				knowledgeFeedback: knowledgeEval.feedback,
+				vibeFeedback: vibeEval.feedback,
 				shouldContinue,
 				conversationState: conversationState
 			};
+			logger.info({ decision: result.decision, nextMessage: result.nextMessage }, 'Evaluation complete');
+			return result;
+
 		} catch (error) {
 			logger.error('Error in agent evaluation:', error);
 			throw error;
