@@ -6,7 +6,7 @@ export const getAllProjects = async () => {
   try {
     const { data, error } = await supabaseClient
       .from('Projects')
-      .select('id, name, author, short_description, token_ticker, status');
+      .select('id, name, author, short_description, token_ticker, status, image_url');
 
     if (error) {
       throw new Error(`Supabase error in getAllProjects: ${error.message}`);
