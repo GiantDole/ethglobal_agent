@@ -1,8 +1,8 @@
 import { Client } from "..";
 
 class InteractionClient extends Client {
-  constructor(url: string) {
-    super(`${url}/api/interaction`);
+  constructor() {
+    super('/api/interaction');
   }
 
   async interact(projectId: string, userInput: string, reset: boolean = false) {

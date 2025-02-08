@@ -13,10 +13,23 @@ const port = process.env.PORT || 3000;
 
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
-  credentials: true
+  origin: [
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+    "https://bouncer-ai.xyz",
+    "http://bouncer-ai.xyz",
+  ],
+  credentials: true,
 }));
+
 app.use(express.json());
+
+// Add detailed cookie logging middleware
+app.use((req: Request, res: Response, next) => {
+  console.log('Parsed Cookies:', req.cookies);
+  console.log('Raw Cookie Header:', req.headers.cookie);
+  console.log('All Headers:', req.headers);
+  next();
+});
 
 
 app.get('/', (req: Request, res: Response) => {

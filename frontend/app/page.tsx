@@ -7,8 +7,6 @@ import Image from "next/image";
 import ProjectClient from "../clients/Projects";
 
 // Images
-import Connect from "@/assets/header/connect_icon.svg";
-import Logo from "@/assets/header/logo.svg";
 import Hero from "@/assets/hero/hero.png";
 import Net from "@/assets/hero/net.svg";
 import Badge from "@/assets/hero/hero_badge.svg";
@@ -32,9 +30,7 @@ type Token = {
   created_at: string;
 };
 
-const projectClient = new ProjectClient(
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
-);
+const projectClient = new ProjectClient();
 
 export default function Page() {
   const [tokens, setTokens] = useState<Token[]>([]);

@@ -2,7 +2,7 @@ export class Client {
   url: string;
 
   constructor(url: string) {
-    this.url = url;
+    this.url = url.replace(/^https?:\/\/[^/]+/, '');
   }
 
   async request(path: string, options: RequestInit = {
@@ -12,7 +12,10 @@ export class Client {
     },
   }) {
     try {
-      const response = await fetch(`${this.url}${path}`, options);
+      const response = await fetch(`${this.url}${path}`, {
+        ...options,
+        credentials: 'include',
+      });
 
       if (!response.ok) {
         console.error(`${response.status} ${response.statusText}`);
