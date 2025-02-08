@@ -1,4 +1,5 @@
-import { ChatOpenAI } from "@langchain/openai";
+// import { ChatOpenAI } from "@langchain/openai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { BufferMemory } from "langchain/memory";
 
@@ -13,7 +14,7 @@ interface VibeEvaluation {
 }
 
 export class VibeAgent {
-	private model: ChatOpenAI;
+	private model: ChatGoogleGenerativeAI;
 	private walletMemories: Map<string, BufferMemory>;
 	private readonly BOUNCER_PROMPT = `You are the ultimate Vibe Detector, a perceptive observer trained to read between the lines and assess the tone, enthusiasm, and authenticity of any participant in this exclusive memecoin community. You are sharp, intuitive, and unafraid to call out insincerity, excessive shilling, or a lack of real engagement.
 
@@ -53,10 +54,11 @@ Respond in JSON format:
 }`;
 
 	constructor() {
-		this.model = new ChatOpenAI({
-			modelName: "gpt-4o-mini",
-			temperature: 0.2,
-			openAIApiKey: process.env.OPENAI_API_KEY!,
+		this.model = new ChatGoogleGenerativeAI({
+			model: "gemini-1.5-flash",
+			temperature: 0.5,
+			maxRetries: 2,
+			apiKey: process.env.GEMINI_API_KEY,
 		});
 
 		this.walletMemories = new Map();
@@ -96,8 +98,14 @@ Respond in JSON format:
 				systemPrompt,
 				userMessage,
 			]);
-			const content = response.content;
+			let content = response.content.trim();
+			// Fix JSON formatting issues
+			if (content.startsWith("```json")) {
+				content = content.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+			}
+
 			const evaluation: VibeEvaluation = JSON.parse(content);
+			console.log("Vibe Evaluation :", evaluation);
 
 			await memory.saveContext(
 				{ input: `Q: ${question}\nA: ${answer}` },

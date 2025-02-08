@@ -1,6 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
 import {
-	handleConversation,
 	getSignature,
 	interactionController,
 } from "../controllers/interactionController";
@@ -11,13 +10,7 @@ const router = express.Router();
 router.post(
 	"/:projectId",
 	sessionMiddleware,
-	async (req: Request, res: Response, next: NextFunction) => {
-		try {
-			await handleConversation(req, res);
-		} catch (error) {
-			next(error);
-		}
-	}
+	interactionController.evaluateResponse.bind(interactionController)
 );
 
 router.get(
@@ -30,12 +23,6 @@ router.get(
 			next(error);
 		}
 	}
-);
-
-router.post(
-	"/evaluate",
-	sessionMiddleware,
-	interactionController.evaluateResponse.bind(interactionController)
 );
 
 export default router;
