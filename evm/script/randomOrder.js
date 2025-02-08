@@ -23,19 +23,28 @@
  *   npx hardhat run evm/script/randomOrder.js --network <your-network>
  */
 
+const { ethers } = require("ethers");
 require("dotenv").config();
-const { ethers } = require("hardhat");
+
+const rpcUrl = process.env.ARBITRUM_SEPOLIA_RPC_URL;
+const provider = new ethers.JsonRpcProvider(rpcUrl);
+
+// Load wallet from private key
+const privateKey = process.env.BUYER_PRIVATE_KEY;
+const wallet = new ethers.Wallet(privateKey, provider);
+
+// Load agent wallet for signing
+const agentKey = process.env.PRIVATE_KEY;
+if (!agentKey) {
+  console.error("Please set PRIVATE_KEY in your .env file");
+  process.exit(1);
+}
+const agentWallet = new ethers.Wallet(agentKey, provider);
 
 // --- Configuration loaded from .env ---
 const TOKEN_BONDING_ADDRESS = process.env.TOKEN_BONDING_ADDRESS;
 if (!TOKEN_BONDING_ADDRESS) {
   console.error("Please set TOKEN_BONDING_ADDRESS in your .env file");
-  process.exit(1);
-}
-
-const AGENT_PRIVATE_KEY = process.env.BUYER_PRIVATE_KEY;
-if (!AGENT_PRIVATE_KEY) {
-  console.error("Please set BUYER_PRIVATE_KEY in your .env file");
   process.exit(1);
 }
 
@@ -56,23 +65,21 @@ function getRandomFraction() {
 }
 
 async function main() {
-  // Get the primary signer that will perform orders.
-  const [trader] = await ethers.getSigners();
-  console.log(`Trader account: ${trader.address}`);
+  console.log("Wallet Address:", wallet.address);
 
-  // Create the agent wallet for signing buy orders.
-  const agentWallet = new ethers.Wallet(AGENT_PRIVATE_KEY, ethers.provider);
-  console.log(`Agent account (used for signature): ${agentWallet.address}`);
-
-  // Create an instance of the deployed TokenBondingCurve contract.
-  const TokenBondingCurve = await ethers.getContractFactory("TokenBondingCurve");
-  const tokenBonding = TokenBondingCurve.attach(TOKEN_BONDING_ADDRESS);
+  // Create contract instance using ethers and forge-generated ABI
+  const tokenBondingABI = require("../out/TokenBondingCurve.sol/TokenBondingCurve.json").abi;
+  const tokenBonding = new ethers.Contract(TOKEN_BONDING_ADDRESS, tokenBondingABI, wallet);
 
   // Handle interrupt signals gracefully.
   process.on("SIGINT", () => {
     console.log("Exiting random orders script.");
     process.exit(0);
   });
+
+  // Always perform a buy order first
+  console.log("Performing initial BUY order...");
+  await performBuyOrder(tokenBonding, wallet);
 
   while (true) {
     // Wait a random delay between MIN_INTERVAL and MAX_INTERVAL seconds.
@@ -84,10 +91,10 @@ async function main() {
     const doBuy = Math.random() < 0.5;
     if (doBuy) {
       console.log("Performing a BUY order...");
-      await performBuyOrder(tokenBonding, trader, agentWallet);
+      await performBuyOrder(tokenBonding, wallet);
     } else {
       console.log("Performing a SELL order...");
-      await performSellOrder(tokenBonding, trader);
+      await performSellOrder(tokenBonding, wallet);
     }
   }
 }
@@ -103,26 +110,26 @@ async function main() {
  * 5. Signs the message with the agent's key.
  * 6. Calls the buy() function with the calculated parameters.
  */
-async function performBuyOrder(tokenBonding, trader, agentWallet) {
-  // Get trader's current ETH balance.
-  const ethBalance = await ethers.provider.getBalance(trader.address);
-  console.log(`Trader ETH balance: ${ethers.utils.formatEther(ethBalance)} ETH`);
+async function performBuyOrder(tokenBonding, wallet) {
+  // Get trader's current ETH balance
+  const ethBalance = await provider.getBalance(wallet.address);
+  console.log(`Trader ETH balance: ${ethers.formatEther(ethBalance)} ETH`);
 
-  if (ethBalance.isZero()) {
+  if (ethBalance === 0n) {
     console.log("No ETH available. Skipping buy order.");
     return;
   }
 
   // Use a random fraction of the trader's ETH balance.
   const fraction = getRandomFraction();
-  const ethBalanceFloat = parseFloat(ethers.utils.formatEther(ethBalance));
+  const ethBalanceFloat = parseFloat(ethers.formatEther(ethBalance));
   const depositEthFloat = ethBalanceFloat * fraction;
-  const depositEth = ethers.utils.parseEther(depositEthFloat.toFixed(18));
-  console.log(`Using ${ethers.utils.formatEther(depositEth)} ETH for buy order (fraction=${(fraction * 100).toFixed(2)}%).`);
+  const depositEth = ethers.parseEther(depositEthFloat.toFixed(18));
+  console.log(`Using ${ethers.formatEther(depositEth)} ETH for buy order (fraction=${(fraction * 100).toFixed(2)}%).`);
 
   // Convert deposit ETH into USD using the contract's price method.
   const latestEthPrice = await tokenBonding.getLatestEthPrice();
-  const depositUsd = depositEth.mul(latestEthPrice).div(ethers.constants.WeiPerEther);
+  const depositUsd = depositEth * latestEthPrice / ethers.WeiPerEther;
   console.log(`Deposit USD value (8 decimals): ${depositUsd.toString()}`);
 
   // Read bonding parameters.
@@ -135,11 +142,13 @@ async function performBuyOrder(tokenBonding, trader, agentWallet) {
   let cost;
   while (true) {
     n++;
-    const term1 = basePriceUsd.mul(n);
-    const term2 = slopeUsd.mul(n).mul(tokensSold);
-    const term3 = slopeUsd.mul(n).mul(n - 1).div(2);
-    cost = term1.add(term2).add(term3);
-    if (cost.gt(depositUsd)) {
+    // Convert all values to BigInt for calculations
+    const nBig = BigInt(n);
+    const term1 = basePriceUsd * nBig;
+    const term2 = slopeUsd * nBig * tokensSold;
+    const term3 = slopeUsd * nBig * (nBig - 1n) / 2n;
+    cost = term1 + term2 + term3;
+    if (cost > depositUsd) {
       n--; // last valid value
       break;
     }
@@ -156,23 +165,23 @@ async function performBuyOrder(tokenBonding, trader, agentWallet) {
   const tokenAllocation = numTokens;
 
   // Get and increment the nonce.
-  const currentNonce = await tokenBonding.nonces(trader.address);
-  const newNonce = currentNonce.add(1);
+  const currentNonce = await tokenBonding.nonces(wallet.address);
+  const newNonce = currentNonce + 1n;
 
-  // Prepare the message for signing.
-  const encodedMessage = ethers.utils.defaultAbiCoder.encode(
+  // Prepare the message for signing - EXACTLY as the contract does it
+  const encodedMessage = ethers.AbiCoder.defaultAbiCoder().encode(
     ["address", "uint256", "address", "uint256"],
-    [trader.address, newNonce, tokenBonding.address, tokenAllocation]
+    [wallet.address, newNonce, tokenBonding.target, tokenAllocation]
   );
-  const messageHash = ethers.utils.keccak256(encodedMessage);
-
-  // Sign the message hash using the agent wallet.
-  const signature = await agentWallet.signMessage(ethers.utils.arrayify(messageHash));
+  const messageHash = ethers.keccak256(encodedMessage);
+  
+  // Sign the message hash using the agent wallet
+  const signature = await agentWallet.signMessage(ethers.getBytes(messageHash));
   
   console.log(`Submitting buy order: ${numTokens} tokens, nonce=${newNonce.toString()}`);
   
   try {
-    const tx = await tokenBonding.connect(trader).buy(
+    const tx = await tokenBonding.buy(
       numTokens,
       tokenAllocation,
       newNonce,
@@ -194,19 +203,18 @@ async function performBuyOrder(tokenBonding, trader, agentWallet) {
  * - Uses a random fraction (4–20%) of that balance to determine tokens to sell.
  * - Calls the sell() function.
  */
-async function performSellOrder(tokenBonding, trader) {
+async function performSellOrder(tokenBonding, wallet) {
   // Get the trader's token balance (in smallest units).
-  const tokenBalance = await tokenBonding.balanceOf(trader.address);
+  const tokenBalance = await tokenBonding.balanceOf(wallet.address);
   const decimals = await tokenBonding.decimals();
-  const divisor = ethers.BigNumber.from(10).pow(decimals);
-  const tokenBalanceWhole = tokenBalance.div(divisor);
+  const tokenBalanceWhole = tokenBalance / (10n ** BigInt(decimals));
 
-  if (tokenBalanceWhole.isZero()) {
+  if (tokenBalanceWhole === 0n) {
     console.log("No tokens available for sale. Skipping sell order.");
     return;
   }
 
-  const tokenBalanceNum = tokenBalanceWhole.toNumber();
+  const tokenBalanceNum = Number(tokenBalanceWhole);
   const fraction = getRandomFraction();
   let tokensToSell = Math.floor(tokenBalanceNum * fraction);
   if (tokensToSell < 1) tokensToSell = 1;
@@ -214,7 +222,7 @@ async function performSellOrder(tokenBonding, trader) {
   console.log(`Submitting sell order: selling ${tokensToSell} tokens (out of ${tokenBalanceNum}).`);
 
   try {
-    const tx = await tokenBonding.connect(trader).sell(tokensToSell);
+    const tx = await tokenBonding.sell(tokensToSell);
     console.log("Sell transaction sent:", tx.hash);
     await tx.wait();
     console.log("Sell order executed successfully.");
