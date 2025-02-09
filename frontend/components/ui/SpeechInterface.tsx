@@ -38,8 +38,11 @@ function SpeechInterface() {
   >([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isStartLoading, setIsStartLoading] = useState(false);
 
   const startInteraction = async () => {
+    if (isStartLoading) return;
+    setIsStartLoading(true);
     try {
       // Send empty string to get first question
       console.log(params.id);
@@ -56,6 +59,8 @@ function SpeechInterface() {
       }
     } catch (err) {
       setError("Failed to start interaction");
+    } finally {
+      setIsStartLoading(false);
     }
   };
 
@@ -243,13 +248,14 @@ function SpeechInterface() {
       <div className="py-4 bg-black overflow-hidden z-[9999] mt-auto h-[40vh]">
         <div className="h-full flex flex-col">
           {!currentQuestion ? (
-            // Centered Start Button
             <div className="h-full flex items-center justify-center">
               <Image
                 src={Start}
                 alt="Start"
                 onClick={startInteraction}
-                className="py-16 hover:cursor-pointer"
+                className={`py-16 ${
+                  isStartLoading ? 'opacity-50 cursor-not-allowed' : 'hover:cursor-pointer'
+                }`}
               />
             </div>
           ) : error === "accepted" || error === "denied" ? (

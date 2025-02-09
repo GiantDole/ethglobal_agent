@@ -481,4 +481,63 @@ contract TokenBondingCurve is ERC20, Ownable, ReentrancyGuard {
         
         return (remainingUsd, remainingEth);
     }
+
+    /**
+     * @notice Calculates the number of tokens that can be purchased for the given ETH amount.
+     * @param ethAmount Amount of ETH (in wei) provided.
+     * @return numTokens Number of whole tokens that can be purchased.
+     */
+    function tokensForEth(uint256 ethAmount) external view returns (uint256 numTokens) {
+        // Convert the provided ETH amount to USD (8 decimals)
+        uint256 depositUsd = _convertEthToUsd(ethAmount);
+        // The cost for the first token is basePriceUsd + slopeUsd*tokensSold
+        uint256 costForOneToken = basePriceUsd + (slopeUsd * tokensSold);
+        if (depositUsd < costForOneToken) {
+            return 0;
+        }
+        
+        // If slopeUsd equals zero then each token costs basePriceUsd
+        if (slopeUsd == 0) {
+            return depositUsd / basePriceUsd;
+        }
+        
+        // Otherwise, we solve for n in the quadratic inequality:
+        // costUsd(n) = n * basePriceUsd + slopeUsd * (n * tokensSold + (n*(n-1))/2) <= depositUsd.
+        // This can be rearranged to:
+        // (slopeUsd/2)*n^2 + (basePriceUsd + slopeUsd*tokensSold - (slopeUsd/2))*n - depositUsd <= 0.
+        //
+        // To avoid fractions, multiply both sides by 2:
+        // slopeUsd * n^2 + (2*basePriceUsd + 2*slopeUsd*tokensSold - slopeUsd) * n - 2*depositUsd = 0.
+        //
+        // Define:
+        //    A = slopeUsd,
+        //    B = 2*basePriceUsd + 2*slopeUsd*tokensSold - slopeUsd,
+        //    C = -2*depositUsd.
+        //
+        // The positive solution to A*n^2 + B*n + C = 0 is:
+        //    n = ( -B + sqrt(B^2 - 4*A*C) ) / (2*A)
+        // Since C is negative, the discriminant becomes B^2 + 8*slopeUsd*depositUsd.
+        uint256 A = slopeUsd;
+        uint256 B = 2 * basePriceUsd + 2 * slopeUsd * tokensSold - slopeUsd;
+        uint256 discriminant = B * B + 8 * slopeUsd * depositUsd;
+        uint256 sqrtDiscriminant = sqrt(discriminant);
+        numTokens = (sqrtDiscriminant - B) / (2 * A);
+        return numTokens;
+    }
+    
+    /**
+     * @dev Computes the square root of a given number using the Babylonian method.
+     * @param x The number to compute the square root of.
+     * @return y The floor value of the square root.
+     */
+    function sqrt(uint256 x) internal pure returns (uint256 y) {
+        if (x == 0) return 0;
+        uint256 z = x;
+        y = (x + 1) / 2;
+        while (y < z) {
+            z = y;
+            y = (x / y + y) / 2;
+        }
+        return z;
+    }
 }
