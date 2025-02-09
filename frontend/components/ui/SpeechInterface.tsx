@@ -23,6 +23,7 @@ function SpeechInterface() {
   const [messages, setMessages] = useState<Array<{text: string, sender: 'user' | 'ai'}>>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [hasDecision, setHasDecision] = useState(false);
 
   const startInteraction = async () => {
     try {
@@ -54,9 +55,10 @@ function SpeechInterface() {
       }
       if (!response?.shouldContinue) {
         // Handle end of conversation
-        if (response?.decision === 'accept') {
+        setHasDecision(true);  // Set decision state to true
+        if (response?.decision === 'passed') {
           setError("Congratulations! You've been accepted!");
-        } else if (response?.decision === 'deny') {
+        } else if (response?.decision === 'failed') {
           setError("Sorry, you were not accepted.");
         }
       }
@@ -264,9 +266,9 @@ function SpeechInterface() {
               <div className="flex justify-center">
                 <button
                   onClick={isListening ? stopListening : startAnswering}
-                  disabled={isPlaying}
+                  disabled={isPlaying || hasDecision}
                   className={`p-4 rounded-full ${
-                    isPlaying 
+                    isPlaying || hasDecision
                       ? 'bg-gray-400 cursor-not-allowed' 
                       : isListening 
                         ? 'bg-red-500 hover:bg-red-600' 
