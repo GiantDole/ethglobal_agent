@@ -43,6 +43,7 @@ export class InteractionController {
 
       if (result.decision === "accept" || result.decision === "reject") {
         result.conversationState.access = result.decision === "accept";
+        result.conversationState.final = true;
         await saveProjectInteraction({
           projectId,
           userId,
