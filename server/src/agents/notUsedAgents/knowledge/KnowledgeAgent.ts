@@ -2,9 +2,9 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { BufferMemory } from "langchain/memory";
-import { ConversationHistory } from "../../types/conversation";
+import { ConversationHistory } from "../../../types/conversation";
 import { ChatOpenAI } from "@langchain/openai";
-import logger from "../../config/logger";
+import logger from "../../../config/logger";
 
 interface KnowledgeEvaluation {
 	score: number; // 1-10
@@ -74,23 +74,27 @@ When receiving the system message "Requesting first question.", return your firs
 		answer: string
 	): Promise<KnowledgeEvaluation> {
 		const systemPrompt = new SystemMessage({
-			content: this.BOUNCER_PROMPT
+			content: this.BOUNCER_PROMPT,
 		});
 
 		var historyMessages: any[] = [];
-		
+
 		// Only include completed QA pairs from history
-		historyMessages = conversationHistory.flatMap(entry => 
-			entry.answer ? [
-				new SystemMessage({ content: entry.question }),
-				new HumanMessage({ content: entry.answer })
-			] : []
+		historyMessages = conversationHistory.flatMap((entry) =>
+			entry.answer
+				? [
+						new SystemMessage({ content: entry.question }),
+						new HumanMessage({ content: entry.answer }),
+				  ]
+				: []
 		);
 
 		// Add current question and answer
 		if (conversationHistory.length > 0) {
 			historyMessages.push(
-				new SystemMessage({ content: conversationHistory[conversationHistory.length - 1].question }),
+				new SystemMessage({
+					content: conversationHistory[conversationHistory.length - 1].question,
+				}),
 				new HumanMessage({ content: answer })
 			);
 		} else {
@@ -99,7 +103,10 @@ When receiving the system message "Requesting first question.", return your firs
 			);
 		}
 
-		logger.info({ historyMessages }, 'Request to Knowledge Agent with history.');
+		logger.info(
+			{ historyMessages },
+			"Request to Knowledge Agent with history."
+		);
 
 		try {
 			const response: any = await this.model.invoke([
