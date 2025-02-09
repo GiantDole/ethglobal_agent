@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import { getProjectConversationHistory, getProjectToken, resetProjectConversation, updateProjectConversationHistory } from '../services/projectService';
+import { getTokenAllocation, saveProjectInteraction } from '../services/interactionService';
 import { privyService } from '../services/privyServiceSingleton';
 import { generateSignature as generateUserSignature } from '../services/userService';
 import { AgentService } from '../services/agentService';
 import logger from '../config/logger';
+import { checkSuccessfulInteraction } from '../services/interactionService';
 
 export class InteractionController {
   private agentService: AgentService;
@@ -21,7 +23,6 @@ export class InteractionController {
       logger.info({user: userId, answer, projectId}, 'Evaluating user response for project.');
 
       let conversationState;
-      //TODO: where is answer added
     
       if (reset) {
         // Reset the conversation if requested
@@ -40,6 +41,25 @@ export class InteractionController {
       
       const result = await this.agentService.evaluateResponse(answer, conversationState);
 
+      if (result.decision === "accept" || result.decision === "reject") {
+        result.conversationState.access = result.decision === "accept";
+        await saveProjectInteraction({
+          projectId,
+          userId,
+          conversationState: result.conversationState,
+          decision: result.decision
+        });
+
+        if (result.decision === "accept") {
+          result.conversationState.tokenAllocation = await getTokenAllocation({
+            projectId,
+            userId,
+            knowledgeScore: result.knowledgeScore,
+            vibeScore: result.vibeScore
+          });
+        }
+      }
+
       await updateProjectConversationHistory({
         projectId,
         userId,
@@ -57,6 +77,28 @@ export class InteractionController {
       return res.status(500).json({ error: `Failed to process conversation: ${errorMessage}` });
     }
   };
+
+  async checkSuccessfulInteraction(req: Request, res: Response): Promise<Response> {
+    try {
+      const { projectId } = req.params;
+      const userId = await privyService.getUserIdFromAccessToken(req);
+
+      const hasSuccessfulInteraction = await checkSuccessfulInteraction({
+        projectId,
+        privyId: userId
+      });
+
+      return res.status(200).json({ 
+        success: hasSuccessfulInteraction 
+      });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Error checking successful interaction:', errorMessage);
+      return res.status(500).json({ 
+        error: `Failed to check interaction: ${errorMessage}` 
+      });
+    }
+  }
 
 }
 

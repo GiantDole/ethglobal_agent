@@ -9,6 +9,7 @@ export interface ConversationState {
   access: boolean;
   signature: string;
   tokenAllocation: number;
+  nonce: number;
 }
 
 export interface SessionData {

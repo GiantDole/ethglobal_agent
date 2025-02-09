@@ -75,12 +75,58 @@ export type Database = {
           },
         ]
       }
+      Interactions: {
+        Row: {
+          created_at: string
+          id: number
+          interaction: Json
+          projectId: number
+          success: boolean
+          userId: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          interaction: Json
+          projectId: number
+          success?: boolean
+          userId: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          interaction?: Json
+          projectId?: number
+          success?: boolean
+          userId?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Interactions_projectId_fkey"
+            columns: ["projectId"]
+            isOneToOne: false
+            referencedRelation: "Projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Interactions_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Projects: {
         Row: {
           author: string
+          category: string | null
           created_at: string
+          exclusivity: number | null
           id: number
+          image_url: string | null
           long_description: string
+          market_cap: number | null
           name: string
           short_description: string
           status: number
@@ -89,9 +135,13 @@ export type Database = {
         }
         Insert: {
           author: string
+          category?: string | null
           created_at?: string
+          exclusivity?: number | null
           id?: number
+          image_url?: string | null
           long_description: string
+          market_cap?: number | null
           name: string
           short_description: string
           status?: number
@@ -100,9 +150,13 @@ export type Database = {
         }
         Update: {
           author?: string
+          category?: string | null
           created_at?: string
+          exclusivity?: number | null
           id?: number
+          image_url?: string | null
           long_description?: string
+          market_cap?: number | null
           name?: string
           short_description?: string
           status?: number
