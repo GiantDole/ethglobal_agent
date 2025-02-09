@@ -11,9 +11,10 @@ import {
 } from "../services/interactionService";
 import { privyService } from "../services/privyServiceSingleton";
 import { generateSignature as generateUserSignature } from "../services/userService";
-import { AgentService } from "../services/agentService";
+// import { AgentService } from "../services/agentService";
 import logger from "../config/logger";
 import { checkSuccessfulInteraction } from "../services/interactionService";
+import { CovalentAgentService } from "../services/covalentAgentService";
 
 export class InteractionController {
 	// private agentService: AgentService;
@@ -27,7 +28,7 @@ export class InteractionController {
 	async evaluateResponse(req: Request, res: Response): Promise<Response> {
 		try {
 			const { projectId } = req.params;
-			var { answer, reset } = req.body;
+			var { answer, reset, walletAddress } = req.body;
 			const userId = await privyService.getUserIdFromAccessToken(req);
 
 			logger.info(
@@ -58,9 +59,11 @@ export class InteractionController {
 				answer = "Requesting first question...";
 			}
 
-			const result = await this.agentService.evaluateResponse(
+			const result = await this.covalentAgentService.evaluateResponse(
 				answer,
-				conversationState
+				conversationState,
+				projectId,
+				walletAddress
 			);
 
 			if (result.decision === "accept" || result.decision === "reject") {
@@ -109,6 +112,7 @@ export class InteractionController {
 	): Promise<Response> {
 		try {
 			const { projectId } = req.params;
+
 			const userId = await privyService.getUserIdFromAccessToken(req);
 
 			const hasSuccessfulInteraction = await checkSuccessfulInteraction({

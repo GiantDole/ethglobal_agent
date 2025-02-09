@@ -82,16 +82,13 @@ export class OnChainScoreAgent {
 				finalResult.messages[finalResult.messages.length - 1]?.content
 			);
 
-			const lastMessage = result.messages.find(
-				(msg) => msg.role === "assistant"
-			) as ChatCompletionMessage;
+			const lastMessage =
+				finalResult.messages[finalResult.messages.length - 1]?.content;
 
-			if (!lastMessage || typeof lastMessage.content !== "string") {
+			if (!lastMessage || typeof lastMessage !== "string") {
 				throw new Error("Invalid response from agent");
 			}
-			const score = await this.scoreEvaluatorAgent.evaluateScore(
-				lastMessage.content
-			);
+			const score = await this.scoreEvaluatorAgent.evaluateScore(lastMessage);
 			console.log("Score based on wallet activity : ", score);
 			return Math.min(5, score);
 		} catch (error) {

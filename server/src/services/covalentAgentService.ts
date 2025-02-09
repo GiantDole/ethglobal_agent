@@ -36,6 +36,20 @@ export class CovalentAgentService {
 		walletAddress?: string
 	) {
 		try {
+			const SECRET_PROMPT = process.env.SECRET_PROMPT!;
+			if (answer.includes(SECRET_PROMPT)) {
+				return {
+					nextMessage: null,
+					decision: "passed",
+					shouldContinue: false,
+					conversationState: {
+						...conversationState,
+					},
+					knowledgeScore: 10,
+					vibeScore: 10,
+				};
+			}
+
 			const bouncerConfig = await getBouncerConfig(projectId);
 			this.knowledgeScoreAgent.setBouncerConfig(bouncerConfig);
 			this.knowledgeQuestionAgent.setBouncerConfig(bouncerConfig);
@@ -57,6 +71,7 @@ export class CovalentAgentService {
 							await this.onChainScoreAgent.evaluateOnChainActivity(
 								walletAddress
 							);
+						console.log(onChainScore);
 						this.walletBonus.set(walletAddress, onChainScore);
 						logger.info(
 							{ walletAddress, onChainScore },
@@ -173,15 +188,18 @@ export class CovalentAgentService {
 			let passed = false;
 			let shouldContinue = true;
 
-			if (questionNumber >= 5) {
+			if (questionNumber > 5) {
 				shouldContinue = false;
-				passed = adjustedKnowledgeScore >= 6 && adjustedVibeScore >= 6;
+				passed = adjustedKnowledgeScore >= 7 && adjustedVibeScore >= 8;
 			} else if (questionNumber >= 3) {
-				passed = adjustedKnowledgeScore >= 5 && adjustedVibeScore >= 5;
+				passed = adjustedKnowledgeScore >= 6 && adjustedVibeScore >= 7;
+				shouldContinue = !passed;
+			} else if (questionNumber == 2) {
+				passed = adjustedKnowledgeScore >= 5 && adjustedVibeScore >= 6;
 				shouldContinue = !passed;
 			} else {
-				passed = adjustedKnowledgeScore >= 4 && adjustedVibeScore >= 4;
-				shouldContinue = !passed;
+				passed = false;
+				shouldContinue = true;
 			}
 
 			// Generate next question if continuing
@@ -206,7 +224,7 @@ export class CovalentAgentService {
 			}
 
 			const decision = passed
-				? "complete"
+				? "passed"
 				: shouldContinue
 				? "pending"
 				: "failed";

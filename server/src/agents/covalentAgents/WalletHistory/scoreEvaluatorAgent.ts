@@ -43,6 +43,7 @@ export class ScoreEvaluatorAgent {
 			}
 
 			const evaluation = JSON.parse(lastMessage.content);
+			console.log(evaluation);
 			return evaluation;
 		} catch (error) {
 			console.error("Error in knowledge evaluation:", error);

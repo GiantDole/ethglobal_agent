@@ -1,9 +1,9 @@
 // import { ChatOpenAI } from "@langchain/openai";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { ConversationHistory } from "../../types/conversation";
+import { ConversationHistory } from "../../../types/conversation";
 import { ChatOpenAI } from "@langchain/openai";
-import logger from "../../config/logger";
+import logger from "../../../config/logger";
 interface VibeAgentConfig {
 	openAIApiKey: string;
 }
@@ -71,23 +71,27 @@ When receiving the system message "Requesting first question.", return your firs
 		answer: string
 	): Promise<VibeEvaluation> {
 		const systemPrompt = new SystemMessage({
-			content: this.BOUNCER_PROMPT
+			content: this.BOUNCER_PROMPT,
 		});
 
 		var historyMessages: any[] = [];
-		
+
 		// Only include completed QA pairs from history
-		historyMessages = conversationHistory.flatMap(entry => 
-			entry.answer ? [
-				new SystemMessage({ content: entry.question }),
-				new HumanMessage({ content: entry.answer })
-			] : []
+		historyMessages = conversationHistory.flatMap((entry) =>
+			entry.answer
+				? [
+						new SystemMessage({ content: entry.question }),
+						new HumanMessage({ content: entry.answer }),
+				  ]
+				: []
 		);
 
 		// Add current question and answer
 		if (conversationHistory.length > 0) {
 			historyMessages.push(
-				new SystemMessage({ content: conversationHistory[conversationHistory.length - 1].question }),
+				new SystemMessage({
+					content: conversationHistory[conversationHistory.length - 1].question,
+				}),
 				new HumanMessage({ content: answer })
 			);
 		} else {
@@ -96,7 +100,7 @@ When receiving the system message "Requesting first question.", return your firs
 			);
 		}
 
-		logger.info({ historyMessages }, 'Request to Vibe Agent with history.');
+		logger.info({ historyMessages }, "Request to Vibe Agent with history.");
 
 		try {
 			const response: any = await this.model.invoke([
@@ -104,7 +108,7 @@ When receiving the system message "Requesting first question.", return your firs
 				...historyMessages,
 			]);
 			let content = response.content.trim();
-			
+
 			if (content.startsWith("```json")) {
 				content = content.replace(/^```json\s*/, "").replace(/\s*```$/, "");
 			}
