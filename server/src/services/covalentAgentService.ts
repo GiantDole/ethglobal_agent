@@ -99,6 +99,8 @@ export class CovalentAgentService {
 							},
 						],
 					},
+					knowledgeScore: 0,
+					vibeScore: 0,
 				};
 			}
 
@@ -163,6 +165,8 @@ export class CovalentAgentService {
 						...conversationState,
 						history: conversationHistory,
 					},
+					knowledgeScore: 0,
+					vibeScore: 0,
 				};
 			}
 
@@ -215,6 +219,8 @@ export class CovalentAgentService {
 					...conversationState,
 					history: conversationHistory,
 				},
+				knowledgeScore: knowledgeScore,
+				vibeScore: vibeScore,
 			};
 		} catch (error) {
 			logger.error("Error in agent evaluation:", error);

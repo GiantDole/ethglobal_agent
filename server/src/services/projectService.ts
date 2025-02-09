@@ -6,7 +6,7 @@ export const getAllProjects = async () => {
   try {
     const { data, error } = await supabaseClient
       .from('Projects')
-      .select('id, name, author, short_description, token_ticker, status, image_url');
+      .select('id, name, author, short_description, token_ticker, status, image_url, category, exclusivity');
 
     if (error) {
       throw new Error(`Supabase error in getAllProjects: ${error.message}`);
@@ -127,7 +127,8 @@ export const resetProjectConversation = async ({
     final: false,
     access: false,
     signature: "",
-    tokenAllocation: 0
+    tokenAllocation: 0,
+    nonce: -1
   };
   
   session.projects[projectId] = newState;
@@ -135,7 +136,6 @@ export const resetProjectConversation = async ({
   
   return newState;
 };
-
 /*
 export const createToken = async (tokenData: { name: string; symbol: string; supply: number }) => {
     const { data, error } = await supabase.from('tokens').insert([tokenData]).single();

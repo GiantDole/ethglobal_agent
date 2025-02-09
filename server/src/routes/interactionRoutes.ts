@@ -19,4 +19,10 @@ router.get('/:projectId/signature', successfulProjectInteractionMiddleware, asyn
     }
 });
 
+router.get(
+  "/:projectId/check-success",
+  sessionMiddleware,
+  interactionController.checkSuccessfulInteraction.bind(interactionController)
+);
+
 export default router;
