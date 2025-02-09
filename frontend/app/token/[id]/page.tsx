@@ -38,8 +38,6 @@ const supabase = createClient(
 import TokenSwap from "@/components/ui/TokenSwap";
 
 // Images
-import Net from "@/assets/token_detail/net.svg";
-import Bouncer from "@/assets/token_detail/logo.png";
 import Frame from "@/assets/landing/frame.png";
 import World from "@/assets/landing/world.svg";
 import About from "@/assets/token_detail/about.svg";

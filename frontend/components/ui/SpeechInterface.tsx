@@ -9,7 +9,6 @@ import Link from "next/link";
 import InteractionClient from "@/clients/Interactions";
 
 // Images
-import { MicrophoneIcon } from "@heroicons/react/24/solid";
 import Start from "@/assets/bouncer/start.svg";
 import Connected from "@/assets/header/connected_icon.svg";
 import BouncerIcon from "@/assets/bouncer/identifier_bouncer.svg";
@@ -32,7 +31,6 @@ const interactionClient = new InteractionClient();
 function SpeechInterface() {
   const params = useParams();
   const [currentQuestion, setCurrentQuestion] = useState("");
-  const [interimTranscript, setInterimTranscript] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string>("");
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -41,7 +39,6 @@ function SpeechInterface() {
   >([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [hasDecision, setHasDecision] = useState(false);
 
   const startInteraction = async () => {
     try {
@@ -210,7 +207,6 @@ function SpeechInterface() {
           interim += result[0].transcript ?? "";
         }
       }
-      setInterimTranscript(interim);
     };
 
     try {
