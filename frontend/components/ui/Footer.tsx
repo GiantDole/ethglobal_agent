@@ -1,5 +1,7 @@
+"use client";
 import React from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 // Images
 import Logo from "@/assets/footer/ethglobal.svg";
@@ -9,8 +11,13 @@ import Arbitrum from "@/assets/footer/arbitrum.png";
 import Covalent from "@/assets/footer/covalent.png";
 
 export const Footer = () => {
+  const pathname = usePathname();
   return (
-    <div className="flex bg-black min-h-96 p-3">
+    <div
+      className={`${
+        pathname.includes("/bouncer") ? "hidden" : ""
+      } flex bg-black min-h-96 p-3`}
+    >
       <div className="border border-[#FF8585] flex-1 py-4 px-6 flex flex-col gap-6 sm:flex-row gap-0">
         <div className="flex-1">
           <h3 className="text-[#FF8585] tracking-[6px] text-base font-light mb-3">
