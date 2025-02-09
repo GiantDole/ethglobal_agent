@@ -3,6 +3,7 @@ import PrivyProvider from "../components/utils/privy-provider";
 import { Metadata } from "next";
 import localFont from "next/font/local";
 import Head from "next/head";
+import { Toaster } from "react-hot-toast";
 
 // Components
 import { Header, Footer } from "@/components/ui";
@@ -78,6 +79,19 @@ export default function RootLayout({
       <body>
         <PrivyProvider>
           <div className="pt-24">
+            <Toaster
+              position="top-left"
+              toastOptions={{
+                style: {
+                  backgroundColor: "black",
+                  color: "white",
+                  borderRadius: "0px",
+                  border: "1px solid #FF8585",
+                  fontSize: "16px",
+                  fontWeight: "normal",
+                },
+              }}
+            />
             <Header />
             {children}
             <Footer />

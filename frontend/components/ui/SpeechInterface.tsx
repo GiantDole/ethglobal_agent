@@ -1,9 +1,24 @@
 "use client";
 import React, { useState, useRef } from "react";
-import { MicrophoneIcon } from "@heroicons/react/24/solid";
 import { useParams } from "next/navigation";
+import Spline from "@splinetool/react-spline";
+import Image from "next/image";
+import Link from "next/link";
+
+// Clients
 import InteractionClient from "@/clients/Interactions";
-import Spline from '@splinetool/react-spline';
+
+// Images
+import { MicrophoneIcon } from "@heroicons/react/24/solid";
+import Start from "@/assets/bouncer/start.svg";
+import Connected from "@/assets/header/connected_icon.svg";
+import BouncerIcon from "@/assets/bouncer/identifier_bouncer.svg";
+import SpeakerIcon from "@/assets/bouncer/indentifier_speaker.svg";
+import DefaultSpeaker from "@/assets/bouncer/microphone_default.svg";
+import StartSpeaker from "@/assets/bouncer/microphone_start.svg";
+import StopSpeaker from "@/assets/bouncer/microphone_stop.svg";
+import Rejection from "@/assets/bouncer/rejection.svg";
+import Approval from "@/assets/bouncer/approval.svg";
 
 declare global {
   interface Window {
@@ -20,7 +35,9 @@ function SpeechInterface() {
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string>("");
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const [messages, setMessages] = useState<Array<{text: string, sender: 'user' | 'ai'}>>([]);
+  const [messages, setMessages] = useState<
+    Array<{ text: string; sender: "user" | "ai" }>
+  >([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasDecision, setHasDecision] = useState(false);
@@ -29,12 +46,16 @@ function SpeechInterface() {
     try {
       // Send empty string to get first question
       console.log(params.id);
-      const response = await interactionClient.interact(params.id as string, "", true);
+      const response = await interactionClient.interact(
+        params.id as string,
+        "",
+        true,
+      );
       if (response?.message) {
         setCurrentQuestion(response.message);
         speakText(response.message);
         // Add the first AI message to chat
-        setMessages([{ text: response.message, sender: 'ai' }]);
+        setMessages([{ text: response.message, sender: "ai" }]);
       }
     } catch (err) {
       setError("Failed to start interaction");
@@ -44,22 +65,27 @@ function SpeechInterface() {
   const handleAnswer = async (answer: string) => {
     try {
       // Add user's speech to messages
-      setMessages(prev => [...prev, { text: answer, sender: 'user' }]);
-      
-      const response = await interactionClient.interact(params.id as string, answer);
+      setMessages((prev) => [...prev, { text: answer, sender: "user" }]);
+
+      const response = await interactionClient.interact(
+        params.id as string,
+        answer,
+      );
       if (response?.message) {
         setCurrentQuestion(response.message);
         speakText(response.message);
         // Add AI's response to messages
-        setMessages(prev => [...prev, { text: response.message, sender: 'ai' }]);
+        setMessages((prev) => [
+          ...prev,
+          { text: response.message, sender: "ai" },
+        ]);
       }
       if (!response?.shouldContinue) {
         // Handle end of conversation
-        setHasDecision(true);  // Set decision state to true
-        if (response?.decision === 'passed') {
-          setError("Congratulations! You've been accepted!");
-        } else if (response?.decision === 'failed') {
-          setError("Sorry, you were not accepted.");
+        if (response?.decision === "passed") {
+          setError("accepted");
+        } else if (response?.decision === "failed") {
+          setError("denied");
         }
       }
     } catch (err) {
@@ -97,11 +123,11 @@ function SpeechInterface() {
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
-      
+
       audio.onended = () => {
         setIsPlaying(false);
       };
-      
+
       await audio.play();
     } catch (error) {
       console.error("Error using ElevenLabs:", error);
@@ -204,58 +230,91 @@ function SpeechInterface() {
 
   // Keep the scroll effect
   React.useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   return (
-    <div className="h-[calc(100vh-56px)] flex container mx-auto bg-black overflow-hidden">
-      {/* Left side - Spline */}
-      <div className="w-1/2 h-full overflow-auto">
-        <Spline scene="https://prod.spline.design/1m5ds9rBkE9XTil2/scene.splinecode" />
+    <div className="relative flex flex-col bg-black overflow-hidden h-[100vh] min-h-[600px]">
+      {/* Upper side - Spline */}
+      <Spline
+        scene="https://prod.spline.design/1m5ds9rBkE9XTil2/scene.splinecode"
+        className="absolute w-[100vw] h-[100vh] pb-[200px]"
+      />
+      <div className="absolute w-[100vw] p-4 flex justify-end z-[9999]">
+        <Image src={Connected} alt="Connected" />
       </div>
-
-      {/* Vertical Divider */}
-      <div className="w-[1px] h-full bg-zinc-800"></div>
-
-      {/* Right side - Chat Interface */}
-      <div className="w-1/2 h-full p-6 bg-black overflow-hidden">
+      {/* Bottom side - Chat Interface */}
+      <div className="py-4 bg-black overflow-hidden z-[9999] mt-auto h-[40vh]">
         <div className="h-full flex flex-col">
           {!currentQuestion ? (
             // Centered Start Button
             <div className="h-full flex items-center justify-center">
-              <button
+              <Image
+                src={Start}
+                alt="Start"
                 onClick={startInteraction}
-                className="py-3 px-6 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="py-16 hover:cursor-pointer"
+              />
+            </div>
+          ) : error === "accepted" || error === "denied" ? (
+            <div className="container mx-auto flex flex-col items-center justify-center gap-4 h-full">
+              <div className="flex items-center gap-4">
+                <Image
+                  src={error === "accepted" ? Approval : Rejection}
+                  alt="Icon"
+                />
+                <h3
+                  className={`uppercase text-2xl ${
+                    error === "accepted" ? "text-[#6CD000]" : "text-[#FF8585]"
+                  }`}
+                >
+                  {error === "accepted" ? "WELL DONE!" : "NOT TODAY!"}
+                </h3>
+                <Image
+                  src={error === "accepted" ? Approval : Rejection}
+                  alt="Icon"
+                />
+              </div>
+              <p
+                className={`text-center w-[80vw] uppercase ${
+                  error === "accepted" ? "text-[#6CD000]" : "text-[#FF8585]"
+                } sm:w-[40vw]`}
               >
-                Start Interaction
-              </button>
+                {error === "accepted"
+                  ? "We are glad to have you in our community - your support is crucial to us."
+                  : "You failed the vibe test, which is essential to be part of this community. do your own research and try again."}
+              </p>
+              <Link href="/">
+                <h3>CLOSE</h3>
+              </Link>
             </div>
           ) : (
-            // Chat Interface
-            <>
-              {error && (
-                <div className="p-4 mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-                  {error}
-                </div>
-              )}
-              
+            <div className="flex flex-col h-full">
               {/* Chat messages */}
-              <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+              <div className="flex-1 mb-4 space-y-2 overflow-y-hidden relative">
+                {/* Gradient overlay */}
+                <div
+                  className={`absolute top-0 left-0 right-0 ${
+                    messages.length > 2 ? "h-56" : "h-0"
+                  } bg-gradient-to-b from-black to-transparent z-10`}
+                />
                 {messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${
-                      message.sender === 'user' ? 'justify-end' : 'justify-start'
-                    }`}
-                  >
+                  <div key={index} className={`flex`}>
                     <div
-                      className={`max-w-[80%] p-3 rounded-lg ${
-                        message.sender === 'user'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-zinc-800 text-white'
+                      className={`max-w-[80%] container mx-auto flex items-center gap-2 ${
+                        message.sender === "user"
+                          ? " text-white flex-row-reverse"
+                          : " text-[#FF8585] justify-start"
                       }`}
                     >
-                      {message.text}
+                      {message.sender === "user" ? (
+                        <Image src={SpeakerIcon} alt="Speaker" />
+                      ) : (
+                        <Image src={BouncerIcon} alt="Bouncer" />
+                      )}
+                      {message.sender === "ai"
+                        ? message.text.toUpperCase()
+                        : message.text}
                     </div>
                   </div>
                 ))}
@@ -263,27 +322,27 @@ function SpeechInterface() {
               </div>
 
               {/* Microphone button */}
-              <div className="flex justify-center">
+              <div className="flex justify-center my-4">
                 <button
                   onClick={isListening ? stopListening : startAnswering}
-                  disabled={isPlaying || hasDecision}
-                  className={`p-4 rounded-full ${
-                    isPlaying || hasDecision
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : isListening 
-                        ? 'bg-red-500 hover:bg-red-600' 
-                        : 'bg-green-500 hover:bg-green-600'
-                  } text-white transition-colors`}
+                  disabled={isPlaying}
+                  className={`p-4 rounded-full  text-white transition-colors`}
                 >
-                  <MicrophoneIcon className="w-6 h-6" />
+                  {isListening ? (
+                    <Image src={StopSpeaker} alt="Stop" />
+                  ) : isPlaying ? (
+                    <Image src={DefaultSpeaker} alt="Default" />
+                  ) : (
+                    <Image src={StartSpeaker} alt="Start" />
+                  )}
                 </button>
               </div>
-              {isListening && (
-                <div className="text-center mt-2 text-green-600">
-                  {interimTranscript || "Listening..."}
-                </div>
-              )}
-            </>
+              {/* {isListening && (
+                  <div className="text-center mt-2 text-green-600">
+                    {interimTranscript || "Listening..."}
+                  </div>
+                )} */}
+            </div>
           )}
         </div>
       </div>
