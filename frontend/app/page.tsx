@@ -85,16 +85,16 @@ export default function Page() {
           <Image src={Net} alt="Net" className="ml-auto" />
         </div>
       </div>
-      <div className="container mx-auto">
+      <div className="w-[70vw] mx-auto">
         <div className="flex justify-between">
           <Image src={Star} alt="Star" />
           <Image src={Active} alt="Active" />
           <Image src={Star} alt="Star" />
         </div>
-        <div className="flex flex-wrap gap-6 mt-5 justify-center sm:justify-start">
+        <div className="flex flex-wrap gap-6 mt-5 justify-center sm:justify-between">
           {activeTokens.map((token) => (
             <Link key={token.id} href={`/token/${token.id}`}>
-              <div className="w-60 p-2 cursor-pointer">
+              <div className="w-[calc(70vw-16px)] sm:w-[calc((70vw-24px)/2)] lg:w-[calc((70vw-48px)/3)] p-2 cursor-pointer">
                 <div className="relative flex items-center justify-center">
                   <Image
                     src={token.image_url}
@@ -150,16 +150,16 @@ export default function Page() {
         </div>
       </div>
       <Image src={Orbit} alt="Orbit" className="ml-[20%] mt-12" />
-      <div className="container mx-auto mb-16">
+      <div className="w-[70vw] mx-auto mb-16">
         <div className="flex justify-between mt-[-72px]">
           <Image src={Star} alt="Star" />
           <Image src={Future} alt="Active" />
           <Image src={Star} alt="Star" />
         </div>
-        <div className="flex flex-wrap gap-6 mt-5 justify-center sm:justify-start">
+        <div className="flex flex-wrap gap-6 mt-5 justify-center sm:justify-between">
           {futureTokens.map((token) => (
             <Link key={token.id} href={`/token/${token.id}`}>
-              <div className="w-60 p-2 cursor-pointer border border-[#FF8585]">
+              <div className="w-[calc(70vw-16px)] sm:w-[calc((70vw-24px)/2)] lg:w-[calc((70vw-48px)/3)] p-2 cursor-pointer border border-[#FF8585]">
                 <div className="relative flex items-center justify-center">
                   <Image
                     src={token.image_url}
