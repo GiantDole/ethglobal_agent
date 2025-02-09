@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { usePrivy } from '@privy-io/react-auth';
 
 // Add this import at the top
-import TokenSwap from "@/components/TokenSwap";
+import TokenSwap from "@/components/ui/TokenSwap";
 
 // Images
 import Net from "@/assets/token_detail/net.svg";

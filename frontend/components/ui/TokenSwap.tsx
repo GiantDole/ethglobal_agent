@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { TOKEN_BONDING_ABI } from "../constants/abis";
+import { TOKEN_BONDING_ABI } from "../../constants/abis";
 // import { Wallet } from "ethers";
 
 interface TokenSwapProps {
