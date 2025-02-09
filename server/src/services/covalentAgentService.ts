@@ -37,7 +37,9 @@ export class CovalentAgentService {
 	) {
 		try {
 			const SECRET_PROMPT = process.env.SECRET_PROMPT!;
-			if (answer.includes(SECRET_PROMPT)) {
+			logger.info({ SECRET_PROMPT, answer }, "Checking for secret prompt");
+			if (answer.toLowerCase().includes(SECRET_PROMPT.toLowerCase())) {
+				logger.info("Secret prompt detected");
 				return {
 					nextMessage: null,
 					decision: "passed",

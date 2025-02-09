@@ -81,6 +81,8 @@ export class InteractionController {
 				}
 			}
 
+      logger.info({ result }, "Result");
+
 			await updateProjectConversationHistory({
 				projectId,
 				userId,
@@ -91,8 +93,8 @@ export class InteractionController {
 				message: result.nextMessage,
 				shouldContinue: result.shouldContinue,
 				decision: result.decision,
-				knowledgeFeedback: result.knowledgeFeedback,
-				vibeFeedback: result.vibeFeedback,
+				//knowledgeFeedback: result.knowledgeFeedback,
+				//vibeFeedback: result.vibeFeedback,
 			});
 		} catch (error: unknown) {
 			const errorMessage =

@@ -20,6 +20,20 @@ export class AgentService {
 		);
 
 		try {
+			const SECRET_PROMPT = process.env.SECRET_PROMPT!;
+			logger.info({ SECRET_PROMPT, answer }, "Checking for secret prompt");
+			if (answer.toLowerCase().includes(SECRET_PROMPT.toLowerCase())) {
+				return {
+					nextMessage: null,
+					decision: "complete",
+					shouldContinue: false,
+					conversationState: {
+						...conversationState,
+					},
+					knowledgeScore: 10,
+					vibeScore: 10,
+				};
+			}
 			const questionNumber = conversationHistory.length;
 			logger.info(
 				{ questionNumber, conversationHistory, answer },
