@@ -29,6 +29,8 @@ type Token = {
   status: number;
   created_at: string;
   image_url: string;
+  category: string;
+  exclusivity: number;
 };
 
 const projectClient = new ProjectClient();
@@ -108,7 +110,7 @@ export default function Page() {
                 </div>
                 <div>
                   <h3 className="text-base tracking-[6px] text-[#D9D9D9] py-2">
-                    CATEGORY
+                    {token.category.toUpperCase()}
                   </h3>
                 </div>
                 <div className="flex items-center justify-between mb-2">
@@ -141,7 +143,7 @@ export default function Page() {
                     <p className="text-[#FF8585] tracking-[1px]">EXCLUSIVITY</p>
                   </div>
                   <div>
-                    <p className="font-bold">%6</p>
+                    <p className="font-bold">{token.exclusivity*100 }%</p>
                   </div>
                 </div>
               </div>
@@ -170,7 +172,7 @@ export default function Page() {
                 </div>
                 <div>
                   <h3 className="text-base tracking-[6px] text-[#D9D9D9] py-2">
-                    CATEGORY
+                    {token.category.toUpperCase()}
                   </h3>
                 </div>
                 <div className="flex items-center justify-between mb-2">

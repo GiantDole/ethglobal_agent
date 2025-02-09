@@ -175,7 +175,7 @@ export const generateSignature = async (
   projectId: string,
   evmAddress: string,
   tokenContract: string
-): Promise<string> => {
+): Promise<{ signature: string; nonce: number; tokenAllocation: number }> => {
   // Retrieve the user's session from Redis.
   const sessionKey = `session:${userId}`;
   const sessionString = await redis.get(sessionKey);
@@ -229,5 +229,9 @@ export const generateSignature = async (
   // Save the updated session back to Redis, with an expiration of 180*60 seconds.
   await redis.set(sessionKey, JSON.stringify(sessionData), "EX", 180 * 60);
 
-  return signature;
+  return {
+    signature: signature,
+    nonce: nonce,
+    tokenAllocation: tokenAllocation
+  };
 };

@@ -128,7 +128,8 @@ export const resetProjectConversation = async ({
     access: false,
     signature: "",
     tokenAllocation: 0,
-    nonce: -1
+    nonce: -1,
+    walletAddress: ""
   };
   
   session.projects[projectId] = newState;

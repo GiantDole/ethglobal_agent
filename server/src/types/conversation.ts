@@ -10,6 +10,7 @@ export interface ConversationState {
   signature: string;
   tokenAllocation: number;
   nonce: number;
+  walletAddress: string;
 }
 
 export interface SessionData {
