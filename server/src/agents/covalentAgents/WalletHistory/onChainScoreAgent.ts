@@ -10,76 +10,50 @@ import type {
 	ChatCompletionMessage,
 } from "openai/resources/chat/completions";
 import { user } from "@covalenthq/ai-agent-sdk/dist/core/base";
+import { ScoreEvaluatorAgent } from "./scoreEvaluatorAgent";
 
 export class OnChainScoreAgent {
 	private agent: Agent;
 	private tools: any;
+	private scoreEvaluatorAgent: ScoreEvaluatorAgent;
 
 	constructor(apiKey: string) {
 		this.tools = {
 			tokenBalances: new TokenBalancesTool(apiKey),
 			nftBalances: new NFTBalancesTool(apiKey),
-			transactions: new TransactionsTool(apiKey),
+			// transactions: new TransactionsTool(apiKey),
 		};
 		const tools = this.tools;
 
 		this.agent = new Agent({
-			name: "blockchain researcher",
+			name: "on-chain-evaluator",
 			model: {
 				provider: "OPEN_AI",
 				name: "gpt-4o-mini",
 			},
 			description:
-				"You are a blockchain researcher analyzing wallet activities across different chains.",
+				"You are an expert at evaluating on-chain activity and providing engagement scores.",
 			instructions: [
 				"Analyze wallet activities using the provided blockchain tools",
-				"Summarize token holdings, NFT collections, and recent transactions",
+				"Summarize token holdings, NFT collections",
 				"Provide insights about the wallet's activity patterns",
 			],
 			tools,
 		});
 
-		// this.agent = new Agent({
-		// 	name: "on-chain-evaluator",
-		// 	model: {
-		// 		provider: "OPEN_AI",
-		// 		name: "gpt-4o-mini",
-		// 	},
-		// 	description:
-		// 		"You are an expert at evaluating on-chain activity and providing engagement scores.",
-		// 	instructions: [
-		// 		"Analyze wallet token balances and transactions",
-		// 		"Check NFT holdings and their activity",
-		// 		"Evaluate transaction frequency and volume",
-		// 		"Consider the age of the wallet",
-		// 		"Provide a score out of 5 based on activity",
-		// 		"Higher scores for active wallets with diverse holdings",
-		// 	],
-		// 	tools,
-		// });
+		this.scoreEvaluatorAgent = new ScoreEvaluatorAgent();
 	}
 
-	async evaluateOnChainActivity(walletAddress: string): Promise<{
-		score: number;
-		feedback: string;
-	}> {
-		// const state = StateFn.root(this.agent.description);
-		// state.messages.push(
-		// 	user(
-		// 		`Analyze the on-chain activity for wallet ${walletAddress} and provide a score out of 5.
-		// 	Consider:
-		// 	1. Token balances and their values
-		// 	2. NFT holdings and activity
-		// 	3. Transaction history and patterns
-
-		// 	Return a number i.e. score`
-		// 	)
-		// );
-
+	async evaluateOnChainActivity(walletAddress: string): Promise<number> {
 		const state = StateFn.root(this.agent.description);
 		state.messages.push(
 			user(
-				"Analyze wallet address karanpargal.eth on eth-mainnet and provide a complete analysis of its activities"
+				`Analyze the on-chain activity for wallet ${walletAddress} and provide a score out of 5.
+			Consider:
+			1. Token balances and their values
+			2. NFT holdings and activity
+
+			Return a summary`
 			)
 		);
 
@@ -115,12 +89,11 @@ export class OnChainScoreAgent {
 			if (!lastMessage || typeof lastMessage.content !== "string") {
 				throw new Error("Invalid response from agent");
 			}
-
-			const evaluation = JSON.parse(lastMessage.content);
-			return {
-				score: Math.min(5, evaluation.score), // Ensure score is max 5
-				feedback: evaluation.feedback,
-			};
+			const score = await this.scoreEvaluatorAgent.evaluateScore(
+				lastMessage.content
+			);
+			console.log("Score based on wallet activity : ", score);
+			return Math.min(5, score);
 		} catch (error) {
 			console.error("Error in on-chain evaluation:", error);
 			throw error;

@@ -17,33 +17,33 @@ async function testAgents() {
 			"Q: What brings you to our community?",
 			"A: I've been exploring DeFi protocols and noticed unique community-driven approaches.",
 		];
-		const knowledgeResult = await knowledgeAgent.evaluateKnowledge(
-			"How do you contribute to memecoin communities?",
-			"I actively participate in governance and help new members understand tokenomics.",
-			history
-		);
-		console.log("Knowledge Evaluation:", knowledgeResult);
+		// const knowledgeResult = await knowledgeAgent.evaluateKnowledge(
+		// 	"How do you contribute to memecoin communities?",
+		// 	"I actively participate in governance and help new members understand tokenomics.",
+		// 	history
+		// );
+		// console.log("Knowledge Evaluation:", knowledgeResult);
 
-		console.log("\n=== Testing Question Generator Agent ===");
-		const nextQuestion = await questionAgent.generateNextQuestion([
-			...history,
-			"Q: How do you contribute to memecoin communities?",
-			"A: I actively participate in governance and help new members understand tokenomics.",
-		]);
-		console.log("Next Question:", nextQuestion);
+		// console.log("\n=== Testing Question Generator Agent ===");
+		// const nextQuestion = await questionAgent.generateNextQuestion([
+		// 	...history,
+		// 	"Q: How do you contribute to memecoin communities?",
+		// 	"A: I actively participate in governance and help new members understand tokenomics.",
+		// ]);
+		// console.log("Next Question:", nextQuestion);
 
 		console.log("\n=== Testing OnChain Score Agent ===");
 		// Test with a known active wallet
 		const onChainResult = await onChainAgent.evaluateOnChainActivity(
-			"vitalik.eth"
+			"0x3327AC6E6C7601dF58661b3441f9d24F9F755737"
 		);
 		console.log("OnChain Evaluation:", onChainResult);
 
 		// Test with different wallet
-		const onChainResult2 = await onChainAgent.evaluateOnChainActivity(
-			"0x2738523c25209dbdc279a75b6648730844845c7b"
-		);
-		console.log("OnChain Evaluation (Different Wallet):", onChainResult2);
+		// const onChainResult2 = await onChainAgent.evaluateOnChainActivity(
+		// 	"0x2738523c25209dbdc279a75b6648730844845c7b"
+		// );
+		// console.log("OnChain Evaluation (Different Wallet):", onChainResult2);
 	} catch (error) {
 		console.error("Error in agent tests:", error);
 	}
