@@ -193,8 +193,15 @@ export const generateSignature = async (
   // Retrieve tokenAllocation from the project session.
   const tokenAllocation = projectSession.tokenAllocation;
 
-  // Retrieve the user's current nonce and increment it in Supabase.
-  const nonce = await getAndIncrementUserNonce(userId);
+  var nonce;
+
+  if (sessionData.projects[projectId].nonce === -1) {
+    // Retrieve the user's current nonce and increment it in Supabase.
+    nonce = await getAndIncrementUserNonce(userId);
+    sessionData.projects[projectId].nonce = nonce;
+  } else {
+    nonce = sessionData.projects[projectId].nonce;
+  }
 
   // Create the message hash using Solidity's encoding standards.
   // Note: Solidity does not support float values so we convert tokenAllocation to an integer representation.
