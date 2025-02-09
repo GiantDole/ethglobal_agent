@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 // Components
 import { ConnectWallet } from "./ConnectWallet";
@@ -13,6 +14,8 @@ import About from "@/assets/header/nav_about.svg";
 import Documentation from "@/assets/header/nav_documentation.svg";
 
 export const Header = () => {
+  const pathname = usePathname();
+
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -30,7 +33,9 @@ export const Header = () => {
   return (
     <div
       className={`px-4 py-4 flex justify-between items-center bg-black fixed w-full top-0 transition-transform duration-300 z-50 ${
-        isVisible ? "translate-y-0" : "-translate-y-full"
+        isVisible && !pathname.includes("/bouncer")
+          ? "translate-y-0"
+          : "-translate-y-full"
       }`}
     >
       <div className="flex gap-16 items-center">
