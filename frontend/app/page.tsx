@@ -107,12 +107,10 @@ export default function Page() {
                     alt={token.name}
                     width={200}
                     height={200}
-                    className="absolute clip ml-[-6px] mt-[1px]"
-                    unoptimized
                   />
                 </div>
                 <div>
-                  <h3 className="text-base tracking-[6px] text-[#D9D9D9] mb-2">
+                  <h3 className="font-light tracking-[6px] text-[#D9D9D9] mb-2">
                     {token.category.toUpperCase()}
                   </h3>
                 </div>
@@ -132,21 +130,25 @@ export default function Page() {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1">
                     <Image src={Fire} alt="Fire" />
-                    <p className="mt-1 text-[#FF8585] tracking-[1px]">
+                    <p className="text-xs mt-1 text-[#FF8585] tracking-[1px]">
                       MARKET CAP
                     </p>
                   </div>
                   <div>
-                    <p className="font-bold">$100K</p>
+                    <p className="font-bold text-xs">$100K</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Image src={Target} alt="Target" />
-                    <p className="text-[#FF8585] tracking-[1px]">EXCLUSIVITY</p>
+                    <p className="text-xs text-[#FF8585] tracking-[1px]">
+                      EXCLUSIVITY
+                    </p>
                   </div>
                   <div>
-                    <p className="font-bold">{token.exclusivity * 100}%</p>
+                    <p className="font-bold text-xs">
+                      {token.exclusivity * 100}%
+                    </p>
                   </div>
                 </div>
               </div>
@@ -174,7 +176,7 @@ export default function Page() {
                   />
                 </div>
                 <div>
-                  <h3 className="text-base tracking-[6px] text-[#D9D9D9] mb-2">
+                  <h3 className="text-base font-light tracking-[6px] text-[#D9D9D9] mb-2">
                     {token.category.toUpperCase()}
                   </h3>
                 </div>
@@ -194,21 +196,23 @@ export default function Page() {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1">
                     <Image src={Fire} alt="Fire" />
-                    <p className="mt-1 text-[#FF8585] tracking-[1px]">
+                    <p className="text-xs mt-1 text-[#FF8585] tracking-[1px]">
                       MARKET CAP
                     </p>
                   </div>
                   <div>
-                    <p className="font-bold">$100K</p>
+                    <p className="font-bold text-xs">$100K</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Image src={Target} alt="Target" />
-                    <p className="text-[#FF8585] tracking-[1px]">EXCLUSIVITY</p>
+                    <p className="text-xs text-[#FF8585] tracking-[1px]">
+                      EXCLUSIVITY
+                    </p>
                   </div>
                   <div>
-                    <p className="font-bold">%6</p>
+                    <p className="font-bold text-xs">60%</p>
                   </div>
                 </div>
               </div>

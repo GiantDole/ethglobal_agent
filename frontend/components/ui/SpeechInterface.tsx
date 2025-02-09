@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import Spline from "@splinetool/react-spline";
 import Image from "next/image";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 // Clients
 import InteractionClient from "@/clients/Interactions";
@@ -58,6 +59,7 @@ function SpeechInterface() {
         setMessages([{ text: response.message, sender: "ai" }]);
       }
     } catch (err) {
+      toast.error("Failed to start interaction");
       setError("Failed to start interaction");
     } finally {
       setIsStartLoading(false);
@@ -254,7 +256,9 @@ function SpeechInterface() {
                 alt="Start"
                 onClick={startInteraction}
                 className={`py-16 ${
-                  isStartLoading ? 'opacity-50 cursor-not-allowed' : 'hover:cursor-pointer'
+                  isStartLoading
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:cursor-pointer"
                 }`}
               />
             </div>
