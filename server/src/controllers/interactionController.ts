@@ -108,6 +108,7 @@ export const generateSignature = async (req: Request, res: Response): Promise<Re
     const { projectId } = req.params;
     const { userWalletAddress } = req.body;
 
+
     const tokenData = await getProjectToken(projectId);
     if (!tokenData || !tokenData.token_address) {
       return res.status(404).json({ error: 'Token address not found for project' });
@@ -118,9 +119,20 @@ export const generateSignature = async (req: Request, res: Response): Promise<Re
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
+    
+    //const userSession = await getUserIdFromAccessToken(req);
+    //if (!userSession) {
+    //  return res.status(401).json({ error: 'User session not found' });
+    //}
 
-    const signature: string = await generateUserSignature(userId, projectId, userWalletAddress, tokenAddress);
-    return res.status(200).json({ signature });
+    //if (userSession.walletAddress !== "" && userSession.walletAddress !== userWalletAddress) {
+    //  return res.status(401).json({ error: 'User claimed signature for a different wallet address already' });
+    //} else if (userSession.walletAddress === "") {
+    //  userSession.walletAddress = userWalletAddress;
+    //}
+
+    const signatureData = await generateUserSignature(userId, projectId, userWalletAddress, tokenAddress);
+    return res.status(200).json({ ...signatureData });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error generating signature:', errorMessage);
