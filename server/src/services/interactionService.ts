@@ -137,4 +137,41 @@ import { ConversationState } from "../types/conversation";
     }
   };
 
+  export const getTokenAllocation = async ({
+    knowledgeScore,
+    vibeScore
+  }: {
+    projectId: string;
+    userId: string;
+    knowledgeScore: number;
+    vibeScore: number;
+  }): Promise<number> => {
+    try {
+        // Calculate distance from optimal scores (8,8)
+        const knowledgeDiff = knowledgeScore - 8;
+        const vibeDiff = vibeScore - 8;
+
+        // Use Gaussian-like distribution
+        // exp(-(x²+y²)/σ²) where σ=2 gives a good spread
+        const sigma = 2;
+        const gaussianFactor = Math.exp(-(knowledgeDiff * knowledgeDiff + vibeDiff * vibeDiff) / (sigma * sigma));
+        
+        // Create a multiplier that ranges from near 0 for extreme outliers to 1.3
+        // The further from optimal, the closer to 0 the multiplier will be
+        const multiplier = 1 + 0.3 * (1 - gaussianFactor);
+
+        // Base allocation of 900 tokens
+        const baseAllocation = 800;
+        
+        // Calculate final allocation
+        return Math.round(baseAllocation * multiplier * gaussianFactor);
+    } catch (err) {
+        throw new Error(
+            `Failed to calculate token allocation: ${
+                err instanceof Error ? err.message : String(err)
+            }`
+        );
+    }
+  };
+
   

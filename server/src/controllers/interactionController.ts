@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { getProjectConversationHistory, getProjectToken, resetProjectConversation, updateProjectConversationHistory } from '../services/projectService';
-import { saveProjectInteraction } from '../services/interactionService';
+import { getTokenAllocation, saveProjectInteraction } from '../services/interactionService';
 import { privyService } from '../services/privyServiceSingleton';
 import { generateSignature as generateUserSignature } from '../services/userService';
 import { AgentService } from '../services/agentService';
@@ -23,7 +23,6 @@ export class InteractionController {
       logger.info({user: userId, answer, projectId}, 'Evaluating user response for project.');
 
       let conversationState;
-      //TODO: where is answer added
     
       if (reset) {
         // Reset the conversation if requested
@@ -50,6 +49,15 @@ export class InteractionController {
           conversationState: result.conversationState,
           decision: result.decision
         });
+
+        if (result.decision === "accept") {
+          result.conversationState.tokenAllocation = await getTokenAllocation({
+            projectId,
+            userId,
+            knowledgeScore: result.knowledgeScore,
+            vibeScore: result.vibeScore
+          });
+        }
       }
 
       await updateProjectConversationHistory({

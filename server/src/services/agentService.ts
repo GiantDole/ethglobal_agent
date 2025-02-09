@@ -58,7 +58,9 @@ export class AgentService {
 					knowledgeFeedback: knowledgeEval.feedback,
 					vibeFeedback: vibeEval.feedback,
 					shouldContinue: false,
-					conversationState: conversationState
+					conversationState: conversationState,
+					knowledgeScore,
+					vibeScore
 				};
 			}
 
@@ -92,7 +94,9 @@ export class AgentService {
 					knowledgeFeedback: knowledgeEval.feedback,
 					vibeFeedback: vibeEval.feedback,
 					shouldContinue: false,
-					conversationState: conversationState
+					conversationState: conversationState,
+					knowledgeScore,
+					vibeScore
 				};
 			}
 
@@ -104,7 +108,9 @@ export class AgentService {
 				knowledgeFeedback: knowledgeEval.feedback,
 				vibeFeedback: vibeEval.feedback,
 				shouldContinue,
-				conversationState: conversationState
+				conversationState: conversationState,
+				knowledgeScore,
+				vibeScore
 			};
 			logger.info({ decision: result.decision, nextMessage: result.nextMessage }, 'Evaluation complete');
 			return result;
