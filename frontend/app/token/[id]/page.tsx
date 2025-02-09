@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { usePrivy } from '@privy-io/react-auth';
 
 // Add this import at the top
 import TokenSwap from "@/components/TokenSwap";
@@ -18,9 +19,10 @@ import Bonding from "@/assets/token_detail/bonding.svg";
 import Buy from "@/assets/token_detail/buy.svg";
 import Holder from "@/assets/token_detail/holder.svg";
 import Exclusivity from "@/assets/token_detail/exclusivity.svg";
-
+import tokenbuy from "@/assets/token_detail/tokenbuy.svg";
 // Clients
 import ProjectClient from "@/clients/Projects";
+import Link from "next/link";
 
 // Components
 // import Protected from "@/components/utils/Protected";
@@ -51,9 +53,13 @@ const DISPLAY_DATA = {
 
 function TokenDetail() {
   const params = useParams();
+  const { login, authenticated } = usePrivy();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Mock variable for token access - replace with actual implementation later
+  const [hasTokenAccess] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,7 +95,7 @@ function TokenDetail() {
   return (
     <main>
       <div className="mb-16">
-        <div className="container mx-auto">
+        <div className="w-[70vw] mx-auto">
           <div className="my-24">
             <div className="relative h-40 flex items-center justify-center">
               <Image src={Net} alt="Net" className="absolute" />
@@ -99,7 +105,7 @@ function TokenDetail() {
           <div className="flex items-center gap-6 mt-12 p-4 md:p-0">
             <div className="relative flex items-center justify-center">
               <Image
-                src={"/images/avatar.png"}
+                src={data.image_url}
                 alt={data.name}
                 width={168}
                 height={168}
@@ -118,7 +124,7 @@ function TokenDetail() {
               8,
             )}...${data.token_address.slice(-6)}`}</p>
           </div>
-          <div className="flex gap-6 flex-col p-4 md:flex-row">
+          <div className="flex gap-12 flex-col p-4 md:flex-row">
             <div className="flex-1 flex flex-col gap-8">
               <div>
                 <Image src={About} alt="About" className="mb-4" />
@@ -151,9 +157,33 @@ function TokenDetail() {
             </div>
             <div className="flex-1 flex flex-col gap-8">
               <div>
+
                 <Image src={Buy} alt="Buy" className="mb-4" />
-                <div className="w-full p-6 bg-[#1F1F1F] rounded-lg">
-                  <TokenSwap tokenTicker={data.token_ticker} tokenBondingAddress={data.token_address} />
+                <div className="w-full p-6 bg-[#FF8585] rounded-lg">
+                  {!hasTokenAccess && (
+                    <div className="flex justify-center items-center">
+                      <Image src={tokenbuy} alt="Buy" className="mb-4 text-center" />
+                    </div>
+                  )}
+                  {!authenticated ? (
+                    <button
+                      onClick={login}
+                      className="w-full py-3 px-4 bg-[#000000] text-[#FF8585] rounded-lg hover:bg-opacity-90"
+                    >
+                      Login to Access Token
+                    </button>
+                  ) : !hasTokenAccess ? (
+                    <Link href={`/token/${data.id}/bouncer`}>
+                      <button className="w-full py-3 px-4 bg-[#000000] text-white rounded-lg hover:bg-opacity-90">
+                        Pass the Bouncer
+                      </button>
+                    </Link>
+                  ) : (
+                    <TokenSwap
+                      tokenTicker={data.token_ticker}
+                      tokenBondingAddress={data.token_address}
+                    />
+                  )}
                 </div>
               </div>
               <div>

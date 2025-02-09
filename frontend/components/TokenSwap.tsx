@@ -92,8 +92,8 @@ const TokenSwap = ({ tokenTicker, tokenBondingAddress }: TokenSwapProps) => {
           onClick={() => setActiveTab("buy")}
           className={`flex-1 py-2 rounded-lg font-semibold ${
             activeTab === "buy"
-              ? "bg-[#FF8585] text-white"
-              : "bg-[#2D2D2D] text-gray-400"
+              ? "bg-[#000000] text-white"
+              : "bg-[#FFFFFF] text-black"
           }`}
         >
           Buy
@@ -102,8 +102,8 @@ const TokenSwap = ({ tokenTicker, tokenBondingAddress }: TokenSwapProps) => {
           onClick={() => setActiveTab("sell")}
           className={`flex-1 py-2 rounded-lg font-semibold ${
             activeTab === "sell"
-              ? "bg-[#FF8585] text-white"
-              : "bg-[#2D2D2D] text-gray-400"
+              ? "bg-[#000000] text-white"
+              : "bg-[#FFFFFF] text-black"
           }`}
         >
           Sell
@@ -113,10 +113,10 @@ const TokenSwap = ({ tokenTicker, tokenBondingAddress }: TokenSwapProps) => {
       {/* Token Swap Interface */}
       <div className="flex flex-col gap-3">
         {/* Input Token */}
-        <div className="bg-[#2D2D2D] p-4 rounded-lg">
+        <div className="bg-black p-4 rounded-lg">
           <div className="flex justify-between mb-2">
-            <span className="text-gray-400">From</span>
-            <span className="text-gray-400">
+            <span className="text-white">From</span>
+            <span className="text-white">
               Balance: 0.0 {activeTab === "buy" ? "ETH" : tokenTicker}
             </span>
           </div>
@@ -126,19 +126,19 @@ const TokenSwap = ({ tokenTicker, tokenBondingAddress }: TokenSwapProps) => {
               placeholder="0.0"
               value={inputAmount}
               onChange={(e) => setInputAmount(e.target.value)}
-              className="bg-transparent text-xl w-full focus:outline-none"
+              className="bg-transparent text-white text-xl w-full focus:outline-none"
             />
-            <button className="bg-[#363636] px-4 py-2 rounded-lg flex items-center gap-2">
-              <span>{activeTab === "buy" ? "ETH" : tokenTicker}</span>
+            <button className="bg-[#1A1A1A] px-4 py-2 rounded-lg flex items-center gap-2">
+              <span className="text-white">{activeTab === "buy" ? "ETH" : tokenTicker}</span>
             </button>
           </div>
         </div>
 
         {/* Output Token */}
-        <div className="bg-[#2D2D2D] p-4 rounded-lg">
+        <div className="bg-black p-4 rounded-lg">
           <div className="flex justify-between mb-2">
-            <span className="text-gray-400">To</span>
-            <span className="text-gray-400">
+            <span className="text-white">To</span>
+            <span className="text-white">
               Balance: 0.0 {activeTab === "buy" ? tokenTicker : "ETH"}
             </span>
           </div>
@@ -148,22 +148,22 @@ const TokenSwap = ({ tokenTicker, tokenBondingAddress }: TokenSwapProps) => {
               placeholder="0.0"
               value={outputAmount}
               onChange={(e) => setOutputAmount(e.target.value)}
-              className="bg-transparent text-xl w-full focus:outline-none"
+              className="bg-transparent text-white text-xl w-full focus:outline-none"
             />
-            <button className="bg-[#363636] px-4 py-2 rounded-lg flex items-center gap-2">
-              <span>{activeTab === "buy" ? tokenTicker : "ETH"}</span>
+            <button className="bg-[#1A1A1A] px-4 py-2 rounded-lg flex items-center gap-2">
+              <span className="text-white">{activeTab === "buy" ? tokenTicker : "ETH"}</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Price Impact and Slippage */}
-      <div className="bg-[#2D2D2D] p-4 rounded-lg">
-        <div className="flex justify-between text-sm text-gray-400">
+      <div className="bg-black p-4 rounded-lg">
+        <div className="flex justify-between text-sm text-white">
           <span>Price Impact</span>
           <span>~0.05%</span>
         </div>
-        <div className="flex justify-between text-sm text-gray-400 mt-2">
+        <div className="flex justify-between text-sm text-white mt-2">
           <span>Max Slippage</span>
           <span>0.5%</span>
         </div>
@@ -173,7 +173,7 @@ const TokenSwap = ({ tokenTicker, tokenBondingAddress }: TokenSwapProps) => {
       <button 
         onClick={handleSwap}
         disabled={loading || !inputAmount || !outputAmount}
-        className="w-full bg-[#FF8585] text-white py-4 rounded-lg font-semibold hover:bg-[#ff7171] transition-colors disabled:opacity-50"
+        className="w-full bg-[#000000] text-white py-4 rounded-lg font-semibold hover:bg-[#ff7171] transition-colors "
       >
         {loading ? "Processing..." : `${activeTab === "buy" ? "Buy" : "Sell"} Tokens`}
       </button>
