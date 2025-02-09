@@ -86,7 +86,7 @@ function SpeechInterface() {
       }
       if (!response?.shouldContinue) {
         // Handle end of conversation
-        if (response?.decision === "passed") {
+        if (response?.decision === "complete") {
           setError("accepted");
         } else if (response?.decision === "failed") {
           setError("denied");

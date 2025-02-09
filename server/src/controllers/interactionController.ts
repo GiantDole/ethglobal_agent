@@ -92,7 +92,7 @@ export class InteractionController {
 			return res.status(200).json({
 				message: result.nextMessage,
 				shouldContinue: result.shouldContinue,
-				decision: result.decision,
+				decision: result.decision
 				//knowledgeFeedback: result.knowledgeFeedback,
 				//vibeFeedback: result.vibeFeedback,
 			});
