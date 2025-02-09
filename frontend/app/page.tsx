@@ -82,7 +82,7 @@ export default function Page() {
         <Image
           src={Background}
           alt="Background"
-          className="absolute top-0 left-0 w-full min-h-[100vh] object-cover"
+          className="absolute top-0 left-0 w-full min-h-[100vh] object-cover max-h-[1080px]"
         />
         <div className="relative pt-48">
           <Image src={Hero} alt="Hero" className="mx-auto relative z-20" />
