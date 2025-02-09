@@ -29,7 +29,7 @@ Bouncer AI is a token launchpad of AI-powered ‘bouncers’ that access-restric
 ### Prerequisites
 
 - Node.js (v16 or higher)
-- npm or yarn
+- npm
 - A Web3 wallet (MetaMask recommended)
 
 ### Installation
@@ -62,13 +62,14 @@ DATABASE_URL=your_database_url
 ```
 
 4. Start the development servers:
+Open two terminals and run the following commands:
 ```bash
 # Frontend
 cd frontend
 npm run dev
 
 # Backend
-cd ../server
+cd server
 npm run dev
 ```
 
@@ -78,17 +79,34 @@ The application should now be running at `http://localhost:3000`
 
 ```
 ethglobal-agent/
-├── frontend/           # Next.js frontend application
-│   ├── app/           # Next.js 13+ app directory
-│   ├── components/    # Reusable UI components
-│   ├── clients/       # API client integrations
-│   └── styles/        # Global styles and themes
+├── evm/               # Smart contract development
+│   ├── src/          # Contract source files
+│   ├── script/       # Deployment scripts
+│   └── test/         # Contract test files
 │
-└── server/            # Backend Node.js server
-    ├── src/
-    │   ├── controllers/   # Request handlers
-    │   ├── services/      # Business logic
-    │   └── routes/        # API routes
+├── frontend/         # Next.js frontend application
+│   ├── app/         # Next.js 13+ app directory
+│   ├── components/  # Reusable UI components
+│   ├── clients/     # API client integrations
+│   ├── constants/   # Global constants and configs
+│   ├── assets/      # Static assets and images
+│   └── styles/      # Global styles and themes
+│
+├── server/          # Main backend Node.js server
+│   └── src/
+│       ├── agents/      # AI agent implementations
+│       ├── controllers/ # Request handlers
+│       ├── services/    # Business logic
+│       ├── routes/      # API routes
+│       ├── middlewares/ # Express middlewares
+│       ├── database/    # Database configurations
+│       └── types/       # TypeScript type definitions
+│
+└── token_tracker/   # Token price tracking service
+    └── src/
+        ├── services/    # Token tracking services
+        ├── config/      # Service configuration
+        └── types/       # TypeScript type definitions
 ```
 
 ## Contributing
