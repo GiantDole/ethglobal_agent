@@ -6,6 +6,7 @@ import { generateSignature as generateUserSignature } from '../services/userServ
 import { AgentService } from '../services/agentService';
 import logger from '../config/logger';
 import { checkSuccessfulInteraction } from '../services/interactionService';
+import redis from '../database/redis';
 
 export class InteractionController {
   private agentService: AgentService;
@@ -120,16 +121,17 @@ export const generateSignature = async (req: Request, res: Response): Promise<Re
       return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    //const userSession = await getUserIdFromAccessToken(req);
-    //if (!userSession) {
-    //  return res.status(401).json({ error: 'User session not found' });
-    //}
-
-    //if (userSession.walletAddress !== "" && userSession.walletAddress !== userWalletAddress) {
-    //  return res.status(401).json({ error: 'User claimed signature for a different wallet address already' });
-    //} else if (userSession.walletAddress === "") {
-    //  userSession.walletAddress = userWalletAddress;
-    //}
+    const userSession = await redis.get(`session:${userId}`);
+    if (!userSession) {
+      return res.status(401).json({ error: 'User session not found' });
+    }
+    const sessionData = JSON.parse(userSession);
+    
+    if (sessionData.walletAddress !== "" && sessionData.walletAddress !== userWalletAddress) {
+      return res.status(401).json({ error: 'User claimed signature for a different wallet address already' });
+    } else if (sessionData.walletAddress === "") {
+      sessionData.walletAddress = userWalletAddress;
+    }
 
     const signatureData = await generateUserSignature(userId, projectId, userWalletAddress, tokenAddress);
     return res.status(200).json({ ...signatureData });
