@@ -3,41 +3,42 @@ import PrivyProvider from "../components/utils/privy-provider";
 import { Metadata } from "next";
 import localFont from "next/font/local";
 import Head from "next/head";
-import { Toaster } from "react-hot-toast";
+import ToasterWrapper from "@/components/ui/ToasterWrapper";
 
 // Components
 import { Header, Footer } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "bouncer.ai",
-  description: "bouncer.ai is a platform that allows anyone to launch tokens or communities while ensuring access and allocation are managed by an AI bouncer. Users interact with the bouncer via voice, and it intelligently decides who gets in, how many tokens they receive, and at what cost.",
+  description:
+    "bouncer.ai is a platform that allows anyone to launch tokens or communities while ensuring access and allocation are managed by an AI bouncer. Users interact with the bouncer via voice, and it intelligently decides who gets in, how many tokens they receive, and at what cost.",
   icons: {
     icon: "/favicons/star.png",
   },
   openGraph: {
-    title: 'bouncer.ai',
+    title: "bouncer.ai",
     description:
-      'bouncer.ai is a platform that allows anyone to launch tokens or communities while ensuring access and allocation are managed by an AI bouncer. Users interact with the bouncer via voice, and it intelligently decides who gets in, how many tokens they receive, and at what cost.',
-    url: 'https://bouncer-ai.xyz',
-    siteName: 'https://bouncer-ai.xyz',
+      "bouncer.ai is a platform that allows anyone to launch tokens or communities while ensuring access and allocation are managed by an AI bouncer. Users interact with the bouncer via voice, and it intelligently decides who gets in, how many tokens they receive, and at what cost.",
+    url: "https://bouncer-ai.xyz",
+    siteName: "https://bouncer-ai.xyz",
     images: [
       {
-        url: '/favicons/star.png', // Path relative to the public directory
+        url: "/favicons/star.png", // Path relative to the public directory
         width: 1200,
         height: 630,
-        alt: 'bouncer.ai - The AI bouncer platform',
+        alt: "bouncer.ai - The AI bouncer platform",
       },
     ],
-    locale: 'en_US',
-    type: 'website',
+    locale: "en_US",
+    type: "website",
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'bouncer.ai',
+    card: "summary_large_image",
+    title: "bouncer.ai",
     description:
-      'bouncer.ai is a platform that allows anyone to launch tokens or communities while ensuring access and allocation are managed by an AI bouncer. Users interact with the bouncer via voice, and it intelligently decides who gets in, how many tokens they receive, and at what cost.',
-    creator: '@bouncer_ai',
-    images: ['/favicons/star.png'],
+      "bouncer.ai is a platform that allows anyone to launch tokens or communities while ensuring access and allocation are managed by an AI bouncer. Users interact with the bouncer via voice, and it intelligently decides who gets in, how many tokens they receive, and at what cost.",
+    creator: "@bouncer_ai",
+    images: ["/favicons/star.png"],
   },
 };
 
@@ -79,19 +80,7 @@ export default function RootLayout({
       <body>
         <PrivyProvider>
           <div className="pt-24">
-            <Toaster
-              position="top-left"
-              toastOptions={{
-                style: {
-                  backgroundColor: "black",
-                  color: "white",
-                  borderRadius: "0px",
-                  border: "1px solid #FF8585",
-                  fontSize: "16px",
-                  fontWeight: "normal",
-                },
-              }}
-            />
+            <ToasterWrapper />
             <Header />
             {children}
             <Footer />
