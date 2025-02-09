@@ -58,7 +58,8 @@ export class InteractionController {
 			// const result = await this.agentService.evaluateResponse(answer, conversationState);
 			const result = await this.covalentAgentService.evaluateResponse(
 				answer,
-				conversationState
+				conversationState,
+				projectId
 			);
 
 			await updateProjectConversationHistory({

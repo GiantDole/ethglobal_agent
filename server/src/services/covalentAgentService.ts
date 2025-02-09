@@ -4,6 +4,7 @@ import { KnowledgeQuestionGeneratorAgent } from "../agents/covalentAgents/Knowle
 import { KnowledgeScoreAgent } from "../agents/covalentAgents/Knowledge/knowledgeScoreAgent";
 import { VibeQuestionGeneratorAgent } from "../agents/covalentAgents/Vibe/vibeQuestionGeneratorAgent";
 import { VibeScoreAgent } from "../agents/covalentAgents/Vibe/vibeScoreAgent";
+import { getBouncerConfig } from "./bouncerService";
 
 export class CovalentAgentService {
 	private knowledgeScoreAgent: KnowledgeScoreAgent;
@@ -18,8 +19,18 @@ export class CovalentAgentService {
 		this.vibeQuestionAgent = new VibeQuestionGeneratorAgent();
 	}
 
-	async evaluateResponse(answer: string, conversationState: ConversationState) {
+	async evaluateResponse(
+		answer: string,
+		conversationState: ConversationState,
+		projectId: string
+	) {
 		try {
+			const bouncerConfig = await getBouncerConfig(projectId);
+
+			// Set configs for all agents
+			this.knowledgeScoreAgent.setBouncerConfig(bouncerConfig);
+			this.knowledgeQuestionAgent.setBouncerConfig(bouncerConfig);
+
 			const conversationHistory = [...conversationState.history];
 			const questionNumber = conversationHistory.length;
 

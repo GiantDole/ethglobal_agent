@@ -1,9 +1,11 @@
 import { Agent } from "@covalenthq/ai-agent-sdk";
 import { StateFn } from "@covalenthq/ai-agent-sdk/dist/core/state";
 import type { ChatCompletionMessage } from "openai/resources/chat/completions";
+import { BouncerConfig } from "../../../types/bouncer";
 
 export class KnowledgeScoreAgent {
 	private agent: Agent;
+	private bouncerConfig?: BouncerConfig;
 
 	constructor() {
 		this.agent = new Agent({
@@ -30,20 +32,46 @@ export class KnowledgeScoreAgent {
 		});
 	}
 
+	setBouncerConfig(config: BouncerConfig) {
+		this.bouncerConfig = config;
+	}
+
 	async evaluateKnowledge(
 		question: string,
 		answer: string,
 		history: string[]
 	): Promise<number> {
+		if (!this.bouncerConfig) {
+			throw new Error("Bouncer config not set");
+		}
+
+		const { mandatory_knowledge, whitepaper_knowledge } = this.bouncerConfig;
+
 		const state = StateFn.root(`
-			Evaluate the following answer in the context of memecoin and web3 knowledge.
+			You are a Berlin bouncer evaluating answers.
+			
+			Required knowledge:
+			${mandatory_knowledge}
+
+			Use this whitepaper knowledge for reference :
+			${whitepaper_knowledge}
+
 			Previous conversation:
 			${history.join("\n")}
 			
 			Current Question: ${question}
 			Answer: ${answer}
 			
-			Provide a score (0-10).
+			Evaluate the answer considering:
+			1. Alignment with required knowledge
+			2. Understanding of whitepaper concepts
+			3. Authenticity and depth of understanding
+			
+			Provide a score (0-10) where:
+			- 0-3: Poor understanding or evasive
+			- 4-6: Basic understanding
+			- 7-8: Good understanding
+			- 9-10: Excellent understanding of both mandatory and whitepaper knowledge
 		`);
 
 		try {

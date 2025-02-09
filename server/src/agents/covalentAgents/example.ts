@@ -1,6 +1,6 @@
 import { KnowledgeScoreAgent } from "./Knowledge/knowledgeScoreAgent";
 import { KnowledgeQuestionGeneratorAgent } from "./Knowledge/knowledgeQuestionGeneratorAgent";
-import { OnChainScoreAgent } from "./onChainScoreAgent";
+import { OnChainScoreAgent } from "./WalletHistory/onChainScoreAgent";
 import dotenv from "dotenv";
 
 dotenv.config();
