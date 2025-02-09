@@ -144,3 +144,65 @@ export const createToken = async (tokenData: { name: string; symbol: string; sup
     return data;
 };
 */
+
+export const createProjectWithConfig = async (
+  projectData: {
+    author: string;
+    name: string;
+    long_description: string;
+    short_description: string;
+    category?: string | null;
+    exclusivity?: number | null;
+    image_url?: string | null;
+    market_cap?: number | null;
+    status?: number;
+    token_address?: string | null;
+    token_ticker?: string | null;
+  },
+  bouncerConfigData: {
+    character_choice?: string | null;
+    mandatory_knowledge?: string | null;
+    project_desc?: string | null;
+    whitepaper_knowledge?: string | null;
+  } = {}
+): Promise<{ project: any; bouncerConfig: any }> => {
+  // Insert the project record
+  const { data: project, error: projectError } = await supabaseClient
+    .from('Projects')
+    .insert([
+      {
+        ...projectData,
+        // If not provided, set a default timestamp and status
+        status: projectData.status ?? 0,
+      },
+    ])
+    .select()
+    .single();
+
+  if (projectError) {
+    throw new Error(`Error creating project: ${projectError.message}`);
+  }
+
+  // Prepare the payload for BouncerConfig.
+  // Note: The BouncerConfig table uses the project id (from Projects) as its primary key.
+  const bouncerPayload = {
+    ...bouncerConfigData,
+    id: project.id,
+    created_at: new Date().toISOString(),
+  };
+
+  // Insert the bouncer config record
+  const { data: bouncerConfig, error: bouncerError } = await supabaseClient
+    .from('BouncerConfig')
+    .insert([bouncerPayload])
+    .select()
+    .single();
+
+  if (bouncerError) {
+    // Rollback: if the bouncer insert fails, remove the inserted project record.
+    await supabaseClient.from('Projects').delete().eq('id', project.id);
+    throw new Error(`Error creating bouncer config: ${bouncerError.message}`);
+  }
+
+  return { project, bouncerConfig };
+};
