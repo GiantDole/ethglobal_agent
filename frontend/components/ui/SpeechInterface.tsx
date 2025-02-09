@@ -294,7 +294,7 @@ function SpeechInterface() {
                 {/* Gradient overlay */}
                 <div
                   className={`absolute top-0 left-0 right-0 ${
-                    messages.length > 1 ? "h-56" : "h-0"
+                    messages.length > 2 ? "h-56" : "h-0"
                   } bg-gradient-to-b from-black to-transparent z-10`}
                 />
                 {messages.map((message, index) => (
