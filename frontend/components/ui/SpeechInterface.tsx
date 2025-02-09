@@ -40,6 +40,7 @@ function SpeechInterface() {
   >([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [hasDecision, setHasDecision] = useState(false);
 
   const startInteraction = async () => {
     try {

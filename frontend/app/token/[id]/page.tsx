@@ -1,9 +1,41 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { usePrivy } from '@privy-io/react-auth';
+import { createClient } from '@supabase/supabase-js'
+import { Line } from 'react-chartjs-2'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js'
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+)
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+// Add this import at the top
+import TokenSwap from "@/components/ui/TokenSwap";
 
 // Images
 import Net from "@/assets/token_detail/net.svg";
@@ -16,9 +48,10 @@ import Bonding from "@/assets/token_detail/bonding.svg";
 import Buy from "@/assets/token_detail/buy.svg";
 import Holder from "@/assets/token_detail/holder.svg";
 import Exclusivity from "@/assets/token_detail/exclusivity.svg";
-
+import tokenbuy from "@/assets/token_detail/tokenbuy.svg";
 // Clients
 import ProjectClient from "@/clients/Projects";
+import Link from "next/link";
 
 // Components
 // import Protected from "@/components/utils/Protected";
@@ -49,9 +82,14 @@ const DISPLAY_DATA = {
 
 function TokenDetail() {
   const params = useParams();
+  const { login, authenticated } = usePrivy();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [priceData, setPriceData] = useState<{ created_at: string; price: number }[]>([]);
+
+  // Mock variable for token access - replace with actual implementation later
+  const [hasTokenAccess] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,7 +103,6 @@ function TokenDetail() {
             holderDistribution: DISPLAY_DATA.holderDistribution,
             tokenomics: DISPLAY_DATA.tokenomics,
             exclusivity: DISPLAY_DATA.exclusivity,
-            progress: 20, // Hardcoded progress for bonding curve
           });
         }
       } catch (err) {
@@ -81,24 +118,90 @@ function TokenDetail() {
     }
   }, [params.id]);
 
+  // Add this useEffect for fetching price data
+  useEffect(() => {
+    const fetchPriceData = async () => {
+      const { data, error } = await supabase
+        .from('TokenPrices')  // replace with your table name
+        .select('created_at, price')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching price data:', error);
+        return;
+      }
+
+      setPriceData(data || []); 
+    };
+
+    if (params.id) {
+      fetchPriceData();
+    }
+  }, [params.id]);
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
   if (!data) return <div>No data found</div>;
 
+  // Add this chart configuration
+  const chartData = {
+    labels: priceData.map(d => {
+      const date = new Date(d.created_at);
+      return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }),
+    datasets: [
+      {
+        label: 'Token Price',
+        data: priceData.map(d => d.price),
+        borderColor: '#FF8585',
+        backgroundColor: 'rgba(255, 133, 133, 0.1)',
+        tension: 0.1,
+        fill: true
+      }
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Token Price History'
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
+  };
+
   return (
     <main>
       <div className="mb-16">
-        <div className="container mx-auto">
-          <div className="my-24">
-            <div className="relative h-40 flex items-center justify-center">
-              <Image src={Net} alt="Net" className="absolute" />
-              <Image src={Bouncer} alt="Bouncer" className="absolute" />
+        <div className="w-[70vw] mx-auto">
+          <div className="my-10">
+            <div className="h-[420px] w-[100%]">
+              {priceData.length > 0 ? (
+                <Line data={chartData} options={chartOptions} style={{ width: '100%', height: '100%' }} />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  Loading price data...
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-6 mt-12 p-4 md:p-0">
             <div className="relative flex items-center justify-center">
               <Image
-                src={"/images/avatar.png"}
+                src={data.image_url}
                 alt={data.name}
                 width={168}
                 height={168}
@@ -106,7 +209,7 @@ function TokenDetail() {
               />
               <Image src={Frame} alt="Frame" className="relative" />
             </div>
-            <h1 className="text-2xl md:text-6xl font-bold">
+            <h1 className="text-2xl md:text-4xl font-bold">
               {data.name} - ${data.token_ticker}
             </h1>
             <Image src={World} alt="World" />
@@ -117,7 +220,7 @@ function TokenDetail() {
               8,
             )}...${data.token_address.slice(-6)}`}</p>
           </div>
-          <div className="flex gap-6 flex-col p-4 md:flex-row">
+          <div className="flex gap-12 flex-col p-4 md:flex-row">
             <div className="flex-1 flex flex-col gap-8">
               <div>
                 <Image src={About} alt="About" className="mb-4" />
@@ -136,20 +239,45 @@ function TokenDetail() {
                 <div className="w-full bg-[#424242] h-2 mt-4 mb-6">
                   <div
                     className="bg-[#FF8585] h-2 transition-all duration-300"
-                    style={{ width: `${data.progress}%` }}
+                    style={{ width: `${data.bondingCurveProgress}%` }}
                   ></div>
                 </div>
-                <p>{data.bondingCurve}</p>
-              </div>
-              <div>
-                {/* <Image src={Stats} alt="Stats" className="mb-4" /> */}
+                <div className="flex justify-between items-center">
+                  <p className="font-medium">Current Progress: {data.bondingCurveProgress}%</p>
+                  <p>{data.bondingCurve}</p>
+                </div>
               </div>
             </div>
             <div className="flex-1 flex flex-col gap-8">
               <div>
-                <Link href={`/token/${data.id}/bouncer`}>
-                  <Image src={Buy} alt="Buy" className="mb-4" />
-                </Link>
+
+                <Image src={Buy} alt="Buy" className="mb-4" />
+                <div className="w-full p-6 bg-[#FF8585] rounded-lg">
+                  {!hasTokenAccess && (
+                    <div className="flex justify-center items-center">
+                      <Image src={tokenbuy} alt="Buy" className="mb-4 text-center" />
+                    </div>
+                  )}
+                  {!authenticated ? (
+                    <button
+                      onClick={login}
+                      className="w-full py-3 px-4 bg-[#000000] text-[#FF8585] rounded-lg hover:bg-opacity-90"
+                    >
+                      Login to Access Token
+                    </button>
+                  ) : !hasTokenAccess ? (
+                    <Link href={`/token/${data.id}/bouncer`}>
+                      <button className="w-full py-3 px-4 bg-[#000000] text-[#FF8585] rounded-lg hover:bg-opacity-90">
+                        Pass the Bouncer
+                      </button>
+                    </Link>
+                  ) : (
+                    <TokenSwap
+                      tokenTicker={data.token_ticker}
+                      tokenBondingAddress={data.token_address}
+                    />
+                  )}
+                </div>
               </div>
               <div>
                 {/* <Image src={Dyor} alt="Dyor" className="mb-4" /> */}
