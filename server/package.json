@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
+    "agent-check": "cross-env NODE_ENV=development nodemon --watch src --exec ts-node src/agents/covalentAgents/example.ts",
     "dev": "cross-env NODE_ENV=development nodemon --watch src --exec ts-node src/index.ts",
     "start": "cross-env NODE_ENV=production pm2 start dist/index.js --name backend --no-daemon",
     "prod": "npm run build && cross-env NODE_ENV=production pm2 start ecosystem.config.cjs --env production",
