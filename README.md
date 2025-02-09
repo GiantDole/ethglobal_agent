@@ -1,13 +1,3 @@
-<<<<<<< HEAD
-# Frontend
-
-# Backend
-
-# Smart Contracts
-
-# Token Tracker
-
-=======
 # Bouncer AI 🎭
 
 Bouncer AI is a token launchpad of AI-powered ‘bouncers’ that access-restrict who can buy tokens and at what amount, based on a user’s knowledge, vibe, wallet, and other custom metrics. With bouncer AI, project creators easily configure AI-driven evaluators for their token launch, ensuring that tokenholder are aligned with the project's long term vision. 
@@ -112,4 +102,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgments
 
 - Built with ❤️ for ETHGlobal
->>>>>>> main
+
