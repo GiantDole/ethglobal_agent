@@ -27,7 +27,7 @@ export const Footer = () => {
         </div>
         <div className="flex-1 flex flex-col gap-6">
           <h3 className="text-[#FF8585] tracking-[6px] text-base font-light">
-            TECHNOLOGIES USED
+            TECHNOLOGIES
           </h3>
           <Image src={Privy} alt="Privy" height={35} />
           <Image src={Nethermind} alt="Nethermind" height={40} />

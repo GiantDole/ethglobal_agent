@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .container {
+    @apply max-w-[1024px] mx-auto;
+  }
+}
+
 @layer base {
   /* normal */
   @font-face {

@@ -41,8 +41,8 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
 
   // Add filtering logic for active and future tokens
-  const activeTokens = tokens.filter(token => token.status === 1);
-  const futureTokens = tokens.filter(token => token.status === 0);
+  const activeTokens = tokens.filter((token) => token.status === 1);
+  const futureTokens = tokens.filter((token) => token.status === 0);
 
   useEffect(() => {
     const fetchTokens = async () => {
@@ -62,15 +62,19 @@ export default function Page() {
     fetchTokens();
   }, []);
 
-  if (loading) {
-    return <div className="container mx-auto py-12 px-24">Loading...</div>;
-  }
-
-  if (error) {
+  if (loading)
     return (
-      <div className="container mx-auto py-12 px-24 text-red-500">{error}</div>
+      <div className="container mx-auto min-h-[100vh] flex justify-center items-center">
+        <h1 className="text-2xl text-[#FF8585] mt-[-96px]">LOADING</h1>
+      </div>
     );
-  }
+
+  if (error)
+    return (
+      <div className="container mx-auto min-h-[100vh] flex justify-center items-center">
+        <h1 className="text-2xl text-[#FF8585] mt-[-96px]">ERROR</h1>
+      </div>
+    );
 
   return (
     <main>
@@ -87,29 +91,28 @@ export default function Page() {
           <Image src={Net} alt="Net" className="ml-auto" />
         </div>
       </div>
-      <div className="w-[70vw] mx-auto">
+      <div className="container mx-auto">
         <div className="flex justify-between">
           <Image src={Star} alt="Star" />
           <Image src={Active} alt="Active" />
           <Image src={Star} alt="Star" />
         </div>
-        <div className="flex flex-wrap gap-6 mt-5 justify-center sm:justify-between">
+        <div className="flex flex-wrap gap-5 mt-5 justify-center lg:justify-start p-4">
           {activeTokens.map((token) => (
             <Link key={token.id} href={`/token/${token.id}`}>
-              <div className="w-[calc(70vw-16px)] sm:w-[calc((70vw-24px)/2)] lg:w-[calc((70vw-48px)/3)] p-2 cursor-pointer">
-                <div className="relative flex items-center justify-center">
+              <div className="w-[240px] p-2 cursor-pointer">
+                <div className="relative mb-5 flex items-center justify-center w-[200px] h-[200px] border border-[#FF8585] rounded-full mx-auto overflow-hidden">
                   <Image
                     src={token.image_url}
                     alt={token.name}
-                    width={168}
-                    height={168}
+                    width={200}
+                    height={200}
                     className="absolute clip ml-[-6px] mt-[1px]"
                     unoptimized
                   />
-                  <Image src={Frame} alt="Frame" className="relative" />
                 </div>
                 <div>
-                  <h3 className="text-base tracking-[6px] text-[#D9D9D9] py-2">
+                  <h3 className="text-base tracking-[6px] text-[#D9D9D9] mb-2">
                     {token.category.toUpperCase()}
                   </h3>
                 </div>
@@ -138,12 +141,12 @@ export default function Page() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     <Image src={Target} alt="Target" />
                     <p className="text-[#FF8585] tracking-[1px]">EXCLUSIVITY</p>
                   </div>
                   <div>
-                    <p className="font-bold">{token.exclusivity*100 }%</p>
+                    <p className="font-bold">{token.exclusivity * 100}%</p>
                   </div>
                 </div>
               </div>
@@ -152,17 +155,17 @@ export default function Page() {
         </div>
       </div>
       <Image src={Orbit} alt="Orbit" className="ml-[20%] mt-12" />
-      <div className="w-[70vw] mx-auto mb-16">
+      <div className="container mx-auto">
         <div className="flex justify-between mt-[-72px]">
           <Image src={Star} alt="Star" />
           <Image src={Future} alt="Active" />
           <Image src={Star} alt="Star" />
         </div>
-        <div className="flex flex-wrap gap-6 mt-5 justify-center sm:justify-between">
+        <div className="flex flex-wrap gap-5 mt-5 justify-center lg:justify-start p-4">
           {futureTokens.map((token) => (
             <Link key={token.id} href={`/token/${token.id}`}>
-              <div className="w-[calc(70vw-16px)] sm:w-[calc((70vw-24px)/2)] lg:w-[calc((70vw-48px)/3)] p-2 cursor-pointer border border-[#FF8585]">
-                <div className="relative flex items-center justify-center">
+              <div className="w-[240px] p-2 cursor-pointer border border-[#FF8585]">
+                <div className="relative mb-5 flex items-center justify-center">
                   <Image
                     src={token.image_url}
                     alt={token.name}
@@ -171,7 +174,7 @@ export default function Page() {
                   />
                 </div>
                 <div>
-                  <h3 className="text-base tracking-[6px] text-[#D9D9D9] py-2">
+                  <h3 className="text-base tracking-[6px] text-[#D9D9D9] mb-2">
                     {token.category.toUpperCase()}
                   </h3>
                 </div>
@@ -200,7 +203,7 @@ export default function Page() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     <Image src={Target} alt="Target" />
                     <p className="text-[#FF8585] tracking-[1px]">EXCLUSIVITY</p>
                   </div>
