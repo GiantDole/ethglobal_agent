@@ -182,6 +182,160 @@ ethglobal-agent/
         └── types/       # TypeScript type definitions
 ```
 
+## Agent Architecture
+
+### Overview
+
+The system uses five specialized Covalent AI agents working in concert to evaluate users:
+
+```mermaid
+graph TD
+    IC[InteractionController] --> CAS[CovalentAgentService]
+    CAS --> BC[BouncerConfig]
+
+    subgraph "First Question Only"
+        CAS --> OCA[OnChainScoreAgent]
+        OCA --> SEA[ScoreEvaluatorAgent]
+    end
+
+    subgraph "Knowledge Track"
+        CAS --> KSA[KnowledgeScoreAgent]
+        CAS --> KQG[KnowledgeQuestionGenerator]
+    end
+
+    subgraph "Vibe Track"
+        CAS --> VSA[VibeScoreAgent]
+        CAS --> VQG[VibeQuestionGenerator]
+    end
+
+    subgraph "Question Refinement"
+        KQG --> QG[QuestionGenerator]
+        VQG --> QG
+        QG --> CT[CharacterTone]
+    end
+```
+
+### Agent Roles
+
+1. **Core Evaluation Agents**
+
+   - `KnowledgeScoreAgent`: Evaluates technical understanding (0-10)
+   - `VibeScoreAgent`: Assesses cultural fit (0-10)
+   - `OnChainScoreAgent`: Analyzes wallet activity (0-5, first question only)
+
+2. **Question Generation Agents**
+   - `KnowledgeQuestionGenerator`: Technical/whitepaper questions
+   - `VibeQuestionGenerator`: Cultural/community questions
+   - `QuestionGenerator`: Refines questions with character tone
+
+### Evaluation Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Controller
+    participant CovalentService
+    participant Agents
+    participant Database
+
+    User->>Controller: Submit Answer
+    Controller->>Database: Fetch BouncerConfig
+
+    alt First Question
+        CovalentService->>Agents: OnChainScoreAgent.evaluate()
+        Agents-->>CovalentService: Wallet Bonus (0-5)
+        CovalentService->>Agents: KnowledgeQuestionGenerator.generate()
+        Agents->>Agents: QuestionGenerator.modifyTone()
+    else Subsequent Questions
+        par Knowledge Track
+            CovalentService->>Agents: KnowledgeScoreAgent.evaluate()
+            CovalentService->>Agents: KnowledgeQuestionGenerator.generate()
+        and Vibe Track
+            CovalentService->>Agents: VibeScoreAgent.evaluate()
+            CovalentService->>Agents: VibeQuestionGenerator.generate()
+        end
+        Agents-->>CovalentService: Scores & Questions
+        CovalentService->>Agents: QuestionGenerator.modifyTone()
+    end
+
+    CovalentService->>Database: Update History
+    CovalentService-->>User: Response
+```
+
+### Scoring Process
+
+1. **Initial Phase**
+
+   ```typescript
+   // First interaction
+   if (questionNumber === 0) {
+   	const onChainScore = await onChainScoreAgent.evaluate(walletAddress);
+   	const firstQuestion = await knowledgeQuestionAgent.generate();
+   	const modifiedQuestion = await questionGenerator.modifyTone(
+   		firstQuestion,
+   		bouncerConfig.character_choice
+   	);
+   }
+   ```
+
+2. **Regular Evaluation**
+
+   ```typescript
+   // Parallel evaluation
+   const [knowledgeScore, vibeScore] = await Promise.all([
+   	knowledgeAgent.evaluate(question, answer, history),
+   	vibeAgent.evaluate(question, answer, history),
+   ]);
+
+   // Apply wallet bonus
+   const adjustedScores = {
+   	knowledge: Math.min(10, knowledgeScore + bonus * 0.2),
+   	vibe: Math.min(10, vibeScore + bonus * 0.2),
+   };
+   ```
+
+### Configuration
+
+```typescript
+interface BouncerConfig {
+	mandatory_knowledge: string;
+	project_desc: string;
+	whitepaper_knowledge: string;
+	character_choice: "stoic" | "funny" | "aggressive" | "friendly";
+}
+```
+
+### Progression Rules
+
+1. **Question Flow**
+
+   - Start with Knowledge question
+   - Alternate based on lower score
+   - Maximum 5 questions
+   - Minimum 2 questions
+
+2. **Scoring Thresholds**
+
+   ```typescript
+   if (questionNumber > 5) {
+   	passed = adjustedKnowledgeScore >= 7 && adjustedVibeScore >= 8;
+   } else if (questionNumber >= 3) {
+   	passed = adjustedKnowledgeScore >= 6 && adjustedVibeScore >= 7;
+   } else if (questionNumber === 2) {
+   	passed = adjustedKnowledgeScore >= 5 && adjustedVibeScore >= 6;
+   }
+   ```
+
+3. **Character Implementation**
+   ```typescript
+   const characterStyles = {
+   	stoic: "Minimal emotion, fact-focused evaluation",
+   	funny: "Witty but maintaining evaluation standards",
+   	aggressive: "Direct and challenging, but fair scoring",
+   	friendly: "Warm while ensuring proper evaluation",
+   };
+   ```
+
 ## Getting Started
 
 ### Prerequisites
@@ -248,182 +402,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgments
 
 - Built with ❤️ for ETHGlobal
-
-## Agent Architecture (Covalent Implementation)
-
-### Agent Workflow
-
-![Agent Workflow](agent-workflow.png)
-
-The system uses Covalent AI SDK's multi-agent architecture for user evaluation:
-
-### Core Agents
-
-1. **Knowledge Score Agent**
-
-   - Evaluates technical understanding using mandatory knowledge
-   - Considers whitepaper context
-   - Adapts strictness based on project configuration
-   - Returns score (0-10) and feedback
-
-2. **Vibe Score Agent**
-
-   - Assesses cultural alignment and authenticity
-   - Uses character-based evaluation
-   - Considers project's community values
-   - Returns score (0-10)
-
-3. **Knowledge Question Generator**
-
-   - Generates contextual technical questions
-   - Progressive difficulty based on history
-   - Incorporates mandatory knowledge checks
-   - Avoids revealing project details directly
-
-4. **Vibe Question Generator**
-
-   - Creates culture-fit questions
-   - Adapts tone to character choice
-   - Tests community understanding
-   - Maintains consistent persona
-
-5. **OnChain Score Agent** (First Question Only)
-   - Evaluates wallet activity
-   - Checks token/NFT holdings
-   - Provides bonus points (0-5)
-   - Affects final scoring
-
-### Evaluation Flow
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Controller
-    participant BouncerConfig
-    participant Agents
-    participant Database
-
-    User->>Controller: Submit Answer
-    Controller->>BouncerConfig: Fetch Project Config
-
-    alt First Question
-        Controller->>Agents: Get OnChain Score
-        Agents-->>Controller: Wallet Bonus (0-5)
-        Controller->>Agents: Generate First Question
-    else Subsequent Questions
-        par Parallel Evaluation
-            Controller->>Agents: Knowledge Score
-            Controller->>Agents: Vibe Score
-        end
-        Agents-->>Controller: Scores & Feedback
-        Controller->>Controller: Compare Scores
-        Controller->>Agents: Generate Next Question
-    end
-
-    Controller->>Database: Update History
-    Controller-->>User: Response
-```
-
-### Scoring Process
-
-1. **Initial Evaluation**
-
-   ```typescript
-   if (questionNumber === 0) {
-   	// Get wallet bonus if available
-   	const onChainScore = await onChainScoreAgent.evaluate(walletAddress);
-   	// Generate first knowledge question
-   	const firstQuestion = await knowledgeQuestionAgent.generate();
-   }
-   ```
-
-2. **Regular Evaluation**
-
-   ```typescript
-   // Parallel score evaluation
-   const [knowledgeScore, vibeScore] = await Promise.all([
-   	knowledgeAgent.evaluate(question, answer, history),
-   	vibeAgent.evaluate(question, answer, history),
-   ]);
-
-   // Apply wallet bonus
-   const adjustedScores = {
-   	knowledge: Math.min(10, knowledgeScore + bonus * 0.2),
-   	vibe: Math.min(10, vibeScore + bonus * 0.2),
-   };
-   ```
-
-3. **Decision Making**
-   ```typescript
-   const passed = adjustedKnowledgeScore >= 7 && adjustedVibeScore >= 8;
-   const shouldContinue = !passed && questionNumber < 5;
-   ```
-
-### Configuration (from Supabase)
-
-```typescript
-interface BouncerConfig {
-	mandatory_knowledge: string;
-	project_desc: string;
-	whitepaper_knowledge: string;
-	character_choice: "stoic" | "funny" | "aggressive" | "friendly";
-}
-```
-
-### Response Format
-
-```typescript
-interface EvaluationResponse {
-	nextMessage: string | null;
-	decision: "pending" | "passed" | "failed";
-	shouldContinue: boolean;
-	conversationState: ConversationState;
-	knowledgeScore: number;
-	vibeScore: number;
-}
-```
-
-### Progression Rules
-
-1. **Question Limits**
-
-   - Minimum: 2 questions
-   - Maximum: 5 questions
-   - Early pass possible with exceptional scores
-
-2. **Scoring Thresholds**
-
-   ```typescript
-   if (questionNumber > 5) {
-   	passed = adjustedKnowledgeScore >= 7 && adjustedVibeScore >= 8;
-   } else if (questionNumber >= 3) {
-   	passed = adjustedKnowledgeScore >= 6 && adjustedVibeScore >= 7;
-   } else if (questionNumber === 2) {
-   	passed = adjustedKnowledgeScore >= 5 && adjustedVibeScore >= 6;
-   }
-   ```
-
-3. **Immediate Failure Conditions**
-   - Knowledge or Vibe score ≤ 1
-   - Attempt to manipulate system
-   - Revealing scoring criteria
-
-### Character Implementation
-
-Each character choice affects:
-
-- Question tone and style
-- Evaluation strictness
-- Response formatting
-- Feedback delivery
-
-Example:
-
-```typescript
-const characterStyles = {
-	stoic: "Ask questions with minimal emotion, focusing on facts",
-	funny: "Include clever wordplay while maintaining seriousness",
-	aggressive: "Frame questions challengingly but fairly",
-	friendly: "Ask welcoming but probing questions",
-};
-```
