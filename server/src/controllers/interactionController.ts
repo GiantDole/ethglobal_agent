@@ -1,15 +1,23 @@
-import { Request, Response } from 'express';
-import { getProjectConversationHistory, getProjectToken, resetProjectConversation, updateProjectConversationHistory } from '../services/projectService';
-import { privyService } from '../services/privyServiceSingleton';
-import { generateSignature as generateUserSignature } from '../services/userService';
-import { AgentService } from '../services/agentService';
-import logger from '../config/logger';
+import { Request, Response } from "express";
+import {
+	getProjectConversationHistory,
+	getProjectToken,
+	resetProjectConversation,
+	updateProjectConversationHistory,
+} from "../services/projectService";
+import { privyService } from "../services/privyServiceSingleton";
+import { generateSignature as generateUserSignature } from "../services/userService";
+import { AgentService } from "../services/agentService";
+import logger from "../config/logger";
+import { CovalentAgentService } from "../services/covalentAgentService";
 
 export class InteractionController {
-  private agentService: AgentService;
+	// private agentService: AgentService;
+	private covalentAgentService: CovalentAgentService;
 
 	constructor() {
-		this.agentService = new AgentService();
+		// this.agentService = new AgentService();
+		this.covalentAgentService = new CovalentAgentService();
 	}
 
 	async evaluateResponse(req: Request, res: Response): Promise<Response> {
@@ -18,72 +26,100 @@ export class InteractionController {
 			var { answer, reset } = req.body;
 			const userId = await privyService.getUserIdFromAccessToken(req);
 
-      logger.info({user: userId, answer, projectId}, 'Evaluating user response for project.');
+			logger.info(
+				{ user: userId, answer, projectId },
+				"Evaluating user response for project."
+			);
 
-      let conversationState;
-      //TODO: where is answer added
-    
-      if (reset) {
-        // Reset the conversation if requested
-        conversationState = await resetProjectConversation({ projectId, userId });
-      } else {
-        conversationState = await getProjectConversationHistory({ projectId, userId });
-      }
+			let conversationState;
+			//TODO: where is answer added
 
-      if (conversationState.history.length !== 0 && !answer) {
-        return res.status(400).json({ error: 'Missing user input' });
-      }
+			if (reset) {
+				// Reset the conversation if requested
+				conversationState = await resetProjectConversation({
+					projectId,
+					userId,
+				});
+			} else {
+				conversationState = await getProjectConversationHistory({
+					projectId,
+					userId,
+				});
+			}
 
-      if(conversationState.history.length === 0) {
-        answer = "Requesting first question...";
-      }
-      
-      const result = await this.agentService.evaluateResponse(answer, conversationState);
+			if (conversationState.history.length !== 0 && !answer) {
+				return res.status(400).json({ error: "Missing user input" });
+			}
 
-      await updateProjectConversationHistory({
-        projectId,
-        userId,
-        conversationState: result.conversationState
-      });
+			if (conversationState.history.length === 0) {
+				answer = "Requesting first question...";
+			}
 
-      return res.status(200).json({
-        message: result.nextMessage,
-        shouldContinue: result.shouldContinue,
-        decision: result.decision,
-      });
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error processing conversation:', errorMessage);
-      return res.status(500).json({ error: `Failed to process conversation: ${errorMessage}` });
-    }
-  };
+			// const result = await this.agentService.evaluateResponse(answer, conversationState);
+			const result = await this.covalentAgentService.evaluateResponse(
+				answer,
+				conversationState
+			);
 
+			await updateProjectConversationHistory({
+				projectId,
+				userId,
+				conversationState: result.conversationState,
+			});
+
+			return res.status(200).json({
+				message: result.nextMessage,
+				shouldContinue: result.shouldContinue,
+				decision: result.decision,
+			});
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : "Unknown error";
+			console.error("Error processing conversation:", errorMessage);
+			return res
+				.status(500)
+				.json({ error: `Failed to process conversation: ${errorMessage}` });
+		}
+	}
 }
 
 //TODO: make sure the user session was successful and all the relevant data is stored in redis
-export const generateSignature = async (req: Request, res: Response): Promise<Response> => {
-  try {
-    const { projectId } = req.params;
-    const { userWalletAddress } = req.body;
+export const generateSignature = async (
+	req: Request,
+	res: Response
+): Promise<Response> => {
+	try {
+		const { projectId } = req.params;
+		const { userWalletAddress } = req.body;
 
-    const tokenData = await getProjectToken(projectId);
-    if (!tokenData || !tokenData.token_address) {
-      return res.status(404).json({ error: 'Token address not found for project' });
-    }
-    const tokenAddress: string = tokenData.token_address;
+		const tokenData = await getProjectToken(projectId);
+		if (!tokenData || !tokenData.token_address) {
+			return res
+				.status(404)
+				.json({ error: "Token address not found for project" });
+		}
+		const tokenAddress: string = tokenData.token_address;
 
-    const userId = await privyService.getUserIdFromAccessToken(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
+		const userId = await privyService.getUserIdFromAccessToken(req);
+		if (!userId) {
+			return res.status(401).json({ error: "User not authenticated" });
+		}
 
-    const signature: string = await generateUserSignature(userId, projectId, userWalletAddress, tokenAddress);
-    return res.status(200).json({ signature });
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error generating signature:', errorMessage);
-    return res.status(500).json({ error: `Failed to generate signature: ${errorMessage}` });
-  }
+		const signature: string = await generateUserSignature(
+			userId,
+			projectId,
+			userWalletAddress,
+			tokenAddress
+		);
+		return res.status(200).json({ signature });
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
+		console.error("Error generating signature:", errorMessage);
+		return res
+			.status(500)
+			.json({ error: `Failed to generate signature: ${errorMessage}` });
+	}
 };
 
 export const interactionController = new InteractionController();

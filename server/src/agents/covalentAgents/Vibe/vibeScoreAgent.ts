@@ -33,9 +33,7 @@ export class VibeScoreAgent {
 		question: string,
 		answer: string,
 		history: string[]
-	): Promise<{
-		score: number;
-	}> {
+	): Promise<number> {
 		const state = StateFn.root(`
 			Evaluate the following answer in the context of memecoin and web3 knowledge.
 			Previous conversation:
@@ -46,6 +44,7 @@ export class VibeScoreAgent {
 			
 			Provide a score (0-10).
 		`);
+		console.log(state);
 
 		try {
 			const result = await this.agent.run(state);
@@ -58,9 +57,7 @@ export class VibeScoreAgent {
 			}
 
 			const evaluation = JSON.parse(lastMessage.content);
-			return {
-				score: evaluation,
-			};
+			return evaluation;
 		} catch (error) {
 			console.error("Error in knowledge evaluation:", error);
 			throw error;

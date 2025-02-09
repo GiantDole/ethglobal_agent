@@ -34,9 +34,7 @@ export class KnowledgeScoreAgent {
 		question: string,
 		answer: string,
 		history: string[]
-	): Promise<{
-		score: number;
-	}> {
+	): Promise<number> {
 		const state = StateFn.root(`
 			Evaluate the following answer in the context of memecoin and web3 knowledge.
 			Previous conversation:
@@ -59,9 +57,7 @@ export class KnowledgeScoreAgent {
 			}
 
 			const evaluation = JSON.parse(lastMessage.content);
-			return {
-				score: evaluation,
-			};
+			return evaluation;
 		} catch (error) {
 			console.error("Error in knowledge evaluation:", error);
 			throw error;

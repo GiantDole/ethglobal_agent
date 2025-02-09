@@ -31,12 +31,18 @@ export class KnowledgeQuestionGeneratorAgent {
 	}
 
 	async generateNextQuestion(history: string[]): Promise<string> {
-		const state = StateFn.root(`
+		let state: any;
+		if (history.length > 0) {
+			state = StateFn.root(`
 			Based on the following conversation history, generate the next question:
 			${history.join("\n")}
 			
 			Generate a single follow-up question that probes deeper into the user's knowledge.
 		`);
+		} else {
+			state = StateFn.root(`
+				Generate the first question based on the instructions evaluating the knowledge of the user`);
+		}
 
 		try {
 			const result = await this.agent.run(state);

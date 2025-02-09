@@ -36,6 +36,7 @@ export class VibeQuestionGeneratorAgent {
 			
 			Generate a single follow-up question that probes deeper into the user's knowledge.
 		`);
+		console.log(state);
 
 		try {
 			const result = await this.agent.run(state);
