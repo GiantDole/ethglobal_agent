@@ -7,6 +7,8 @@ export interface ConversationState {
   history: ConversationHistory[];
   final: boolean;
   access: boolean;
+  signature: string;
+  tokenAllocation: number;
 }
 
 export interface SessionData {

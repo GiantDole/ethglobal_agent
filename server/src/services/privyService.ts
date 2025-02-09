@@ -12,6 +12,7 @@
 
 import { Request } from 'express';
 import { PrivyClient, AuthTokenClaims } from '@privy-io/server-auth';
+import logger from "../config/logger";
 
 export interface PrivyServiceConfig {
   appId: string;
@@ -60,14 +61,16 @@ export class PrivyService {
   async getUserFromIdentityToken(req: Request): Promise<any> {
     try {
       const idToken = req.cookies['privy-id-token'];
-      console.log("idToken", idToken);
-      console.log("authToken", req.cookies['privy-token']);
+      logger.info({ cookies: req.cookies }, 'Cookies received');
+      
       if (!idToken) {
-        throw new Error("No valid idToken cookie found.");
+        logger.error('Missing privy-id-token cookie');
+        throw new Error("No valid privy-id-token cookie found.");
       }
       const user = await this.client.getUser({ idToken });
       return user;
     } catch (error) {
+      logger.error('getUserFromIdentityToken failed:', { error });
       throw new Error(`Failed to retrieve user from identity token: ${error}`);
     }
   }
@@ -77,7 +80,8 @@ export class PrivyService {
       const user = await this.getUserFromIdentityToken(req);
       return user.id;
     } catch (error) {
-      throw new Error(`Failed to retrieve user from access token: ${error}`);
+      logger.error('getUserIdFromAccessToken failed:', { error });
+      throw new Error(`Failed to retrieve user ID: ${error}`);
     }
   }
 }

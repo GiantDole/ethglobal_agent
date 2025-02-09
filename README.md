@@ -77,7 +77,7 @@ The application should now be running at `http://localhost:3000`
 ## Project Structure
 
 ```
-berghain-ai/
+ethglobal-agent/
 ├── frontend/           # Next.js frontend application
 │   ├── app/           # Next.js 13+ app directory
 │   ├── components/    # Reusable UI components
@@ -102,3 +102,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgments
 
 - Built with ❤️ for ETHGlobal
+
