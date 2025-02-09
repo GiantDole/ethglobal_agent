@@ -1,17 +1,14 @@
-export interface ConversationState {
-    // Align with ProjectSession from userService
-    history: Array<{ question: string; answer: string | null }>;
-    final: boolean;
-    access: boolean;
-  }
+import supabaseClient from "../database/supabase";
+import { ConversationState } from "../types/conversation";
+
   
   export interface BouncerResponse {
     conversationState: ConversationState;
     nextMessage: string;
     shouldContinue: boolean;
-    decision: 'accept' | 'deny' | 'allocation' | 'pending';
+    decision: 'accept' | 'reject' | 'pending';
   }
-  
+  /*
   export const processConversation = async (
     userInput: string,
     conversationState: ConversationState | null
@@ -43,4 +40,101 @@ export interface ConversationState {
       shouldContinue,
       decision,
     };
+  };*/
+
+  export const saveProjectInteraction = async ({
+    projectId,
+    userId,
+    conversationState,
+    decision
+  }: {
+    projectId: string;
+    userId: string;
+    conversationState: ConversationState;
+    decision: string;
+  }): Promise<void> => {
+    try {
+      const { data: userData, error: userError } = await supabaseClient
+        .from('User')
+        .select('id')
+        .eq('privy_id', userId)
+        .single();
+  
+      if (userError || !userData) {
+        throw new Error(`Failed to find user with privy_id ${userId}: ${userError?.message}`);
+      }
+  
+      const { error } = await supabaseClient
+        .from('Interactions')
+        .insert({
+          projectId: parseInt(projectId),
+          userId: userData.id,
+          interaction: {
+            conversation: conversationState.history,
+            decision: decision,
+            final: conversationState.final,
+            access: conversationState.access,
+            tokenAllocation: conversationState.tokenAllocation
+          },
+          success: conversationState.access
+        });
+  
+      if (error) {
+        throw new Error(`Supabase error in saveProjectInteraction: ${error.message}`);
+      }
+    } catch (err) {
+      throw new Error(
+        `Failed to save project interaction for projectId ${projectId} and privy_id ${userId}: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+    }
   };
+
+  export const checkSuccessfulInteraction = async ({
+    projectId,
+    privyId
+  }: {
+    projectId: string;
+    privyId: string;
+  }): Promise<boolean> => {
+    try {
+      // First get the actual userId from the User table
+      const { data: userData, error: userError } = await supabaseClient
+        .from('User')
+        .select('id')
+        .eq('privy_id', privyId)
+        .single();
+
+      if (userError || !userData) {
+        throw new Error(`Failed to find user with privy_id ${privyId}: ${userError?.message}`);
+      }
+
+      // Check for successful interaction
+      const { data, error } = await supabaseClient
+        .from('Interactions')
+        .select('success')
+        .eq('projectId', parseInt(projectId))
+        .eq('userId', userData.id)
+        .eq('success', true)
+        .limit(1)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') { // no rows returned
+          return false;
+        }
+        throw new Error(`Supabase error in checkSuccessfulInteraction: ${error.message}`);
+      }
+
+      return !!data;
+    } catch (err) {
+      throw new Error(
+        `Failed to check successful interaction for projectId ${projectId} and privy_id ${privyId}: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+    }
+  };
+
+  
