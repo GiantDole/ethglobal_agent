@@ -70,9 +70,9 @@ export class VibeScoreAgent {
 
 		try {
 			const result = await this.agent.run(state);
-			const lastMessage = result.messages[
-				result.messages.length - 1
-			] as ChatCompletionMessage;
+			const lastMessage = result.messages.find(
+				(msg) => msg.role === "assistant"
+			) as ChatCompletionMessage;
 
 			if (!lastMessage || typeof lastMessage.content !== "string") {
 				throw new Error(
@@ -81,17 +81,13 @@ export class VibeScoreAgent {
 			}
 
 			const evaluation = JSON.parse(lastMessage.content);
-			if (
-				typeof evaluation.score !== "number" ||
-				evaluation.score < 0 ||
-				evaluation.score > 10
-			) {
+			if (typeof evaluation !== "number" || evaluation < 0 || evaluation > 10) {
 				throw new Error(
 					"Invalid score format - Expected a number between 0 and 10."
 				);
 			}
 
-			return evaluation.score;
+			return evaluation;
 		} catch (error) {
 			console.error("Error in vibe evaluation:", error);
 			throw error;

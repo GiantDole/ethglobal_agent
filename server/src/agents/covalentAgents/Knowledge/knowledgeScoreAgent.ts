@@ -76,9 +76,9 @@ export class KnowledgeScoreAgent {
 
 		try {
 			const result = await this.agent.run(state);
-			const lastMessage = result.messages[
-				result.messages.length - 1
-			] as ChatCompletionMessage;
+			const lastMessage = result.messages.find(
+				(msg) => msg.role === "assistant"
+			) as ChatCompletionMessage;
 
 			if (!lastMessage || typeof lastMessage.content !== "string") {
 				throw new Error("Invalid response from agent");

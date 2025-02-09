@@ -4,30 +4,39 @@ import { KnowledgeQuestionGeneratorAgent } from "../agents/covalentAgents/Knowle
 import { KnowledgeScoreAgent } from "../agents/covalentAgents/Knowledge/knowledgeScoreAgent";
 import { VibeQuestionGeneratorAgent } from "../agents/covalentAgents/Vibe/vibeQuestionGeneratorAgent";
 import { VibeScoreAgent } from "../agents/covalentAgents/Vibe/vibeScoreAgent";
+import { OnChainScoreAgent } from "../agents/covalentAgents/WalletHistory/onChainScoreAgent";
 import { getBouncerConfig } from "./bouncerService";
+import { QuestionGeneratorAgent } from "../agents/covalentAgents/Question/QuestionGenerator";
 
 export class CovalentAgentService {
 	private knowledgeScoreAgent: KnowledgeScoreAgent;
 	private knowledgeQuestionAgent: KnowledgeQuestionGeneratorAgent;
 	private vibeScoreAgent: VibeScoreAgent;
 	private vibeQuestionAgent: VibeQuestionGeneratorAgent;
+	private questionGeneratorAgent: QuestionGeneratorAgent;
+	private onChainScoreAgent: OnChainScoreAgent;
+	private walletBonus: Map<string, number>;
 
 	constructor() {
 		this.knowledgeScoreAgent = new KnowledgeScoreAgent();
 		this.knowledgeQuestionAgent = new KnowledgeQuestionGeneratorAgent();
 		this.vibeScoreAgent = new VibeScoreAgent();
 		this.vibeQuestionAgent = new VibeQuestionGeneratorAgent();
+		this.questionGeneratorAgent = new QuestionGeneratorAgent();
+		this.onChainScoreAgent = new OnChainScoreAgent(
+			process.env.GOLDRUSH_API_KEY!
+		);
+		this.walletBonus = new Map();
 	}
 
 	async evaluateResponse(
 		answer: string,
 		conversationState: ConversationState,
-		projectId: string
+		projectId: string,
+		walletAddress?: string
 	) {
 		try {
 			const bouncerConfig = await getBouncerConfig(projectId);
-
-			// Set configs for all agents
 			this.knowledgeScoreAgent.setBouncerConfig(bouncerConfig);
 			this.knowledgeQuestionAgent.setBouncerConfig(bouncerConfig);
 
@@ -41,19 +50,51 @@ export class CovalentAgentService {
 
 			// Handle first question case
 			if (questionNumber === 0) {
+				// Get on-chain score if wallet address is provided
+				if (walletAddress) {
+					try {
+						const onChainScore =
+							await this.onChainScoreAgent.evaluateOnChainActivity(
+								walletAddress
+							);
+						this.walletBonus.set(walletAddress, onChainScore);
+						logger.info(
+							{ walletAddress, onChainScore },
+							"On-chain score calculated"
+						);
+					} catch (error) {
+						logger.error(
+							{ error, walletAddress },
+							"Error getting on-chain score"
+						);
+						this.walletBonus.set(walletAddress, 0);
+					}
+				}
+
 				const firstQuestion =
 					await this.knowledgeQuestionAgent.generateNextQuestion([]);
 				logger.info({ firstQuestion }, "Generated first question");
 
+				const modifiedFirstQuestion =
+					await this.questionGeneratorAgent.modifyQuestionTone(
+						firstQuestion,
+						bouncerConfig.character_choice
+					);
+
+				logger.info(
+					{ modifiedFirstQuestion },
+					"Modified first question based on character tone"
+				);
+
 				return {
-					nextMessage: firstQuestion,
+					nextMessage: modifiedFirstQuestion,
 					decision: "pending",
 					shouldContinue: true,
 					conversationState: {
 						...conversationState,
 						history: [
 							{
-								question: firstQuestion,
+								question: modifiedFirstQuestion,
 								answer: null,
 							},
 						],
@@ -67,8 +108,9 @@ export class CovalentAgentService {
 				lastEntry.answer = answer;
 			}
 
-			// Format history for agents (only completed Q&A pairs)
+			// Format history for agents (excluding current Q&A)
 			const formattedHistory = conversationHistory
+				.slice(0, -1) // Exclude current Q&A
 				.filter((entry) => entry.question && entry.answer)
 				.map((entry) => `Q: ${entry.question}\nA: ${entry.answer}`);
 
@@ -89,12 +131,28 @@ export class CovalentAgentService {
 				),
 			]);
 
-			logger.info({ knowledgeScore, vibeScore }, "LLM evaluations complete.");
+			// Add wallet bonus if exists
+			const bonus = walletAddress
+				? this.walletBonus.get(walletAddress) || 0
+				: 0;
+			const adjustedKnowledgeScore = Math.min(10, knowledgeScore + bonus * 0.2);
+			const adjustedVibeScore = Math.min(10, vibeScore + bonus * 0.2);
 
-			// Check for immediate failure
-			if (knowledgeScore <= 1 || vibeScore <= 1) {
+			logger.info(
+				{
+					knowledgeScore,
+					vibeScore,
+					bonus,
+					adjustedKnowledgeScore,
+					adjustedVibeScore,
+				},
+				"Scores calculated"
+			);
+
+			// Rest of the evaluation logic using adjustedKnowledgeScore and adjustedVibeScore
+			if (adjustedKnowledgeScore <= 1 || adjustedVibeScore <= 1) {
 				logger.info(
-					{ knowledgeScore, vibeScore },
+					{ adjustedKnowledgeScore, adjustedVibeScore },
 					"Immediate failure triggered"
 				);
 				return {
@@ -108,39 +166,32 @@ export class CovalentAgentService {
 				};
 			}
 
-			// Determine pass/continue status based on question number and scores
 			let passed = false;
 			let shouldContinue = true;
 
 			if (questionNumber >= 5) {
 				shouldContinue = false;
-				passed = knowledgeScore >= 6 && vibeScore >= 6;
+				passed = adjustedKnowledgeScore >= 6 && adjustedVibeScore >= 6;
 			} else if (questionNumber >= 3) {
-				passed = knowledgeScore >= 5 && vibeScore >= 5;
+				passed = adjustedKnowledgeScore >= 5 && adjustedVibeScore >= 5;
 				shouldContinue = !passed;
 			} else {
-				passed = knowledgeScore >= 4 && vibeScore >= 4;
+				passed = adjustedKnowledgeScore >= 4 && adjustedVibeScore >= 4;
 				shouldContinue = !passed;
 			}
-
-			logger.info(
-				{
-					passed,
-					shouldContinue,
-					questionNumber,
-					historyLength: conversationHistory.length,
-				},
-				"Evaluation status"
-			);
 
 			// Generate next question if continuing
 			let nextQuestion = null;
 			if (shouldContinue) {
-				nextQuestion = await (knowledgeScore > vibeScore
+				const tempNextQuestion = await (adjustedKnowledgeScore >
+				adjustedVibeScore
 					? this.vibeQuestionAgent.generateNextQuestion(formattedHistory)
 					: this.knowledgeQuestionAgent.generateNextQuestion(formattedHistory));
 
-				logger.info({ nextQuestion }, "Generated next question");
+				nextQuestion = await this.questionGeneratorAgent.modifyQuestionTone(
+					tempNextQuestion,
+					bouncerConfig.character_choice
+				);
 
 				if (nextQuestion) {
 					conversationHistory.push({
@@ -155,16 +206,6 @@ export class CovalentAgentService {
 				: shouldContinue
 				? "pending"
 				: "failed";
-
-			logger.info(
-				{
-					decision,
-					historyLength: conversationHistory.length,
-					lastAnswer: conversationHistory[questionNumber - 1]?.answer,
-					nextQuestion,
-				},
-				"Final state"
-			);
 
 			return {
 				nextMessage: nextQuestion,
