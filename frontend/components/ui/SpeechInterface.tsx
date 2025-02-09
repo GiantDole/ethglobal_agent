@@ -290,7 +290,14 @@ function SpeechInterface() {
                   ? "We are glad to have you in our community - your support is crucial to us."
                   : "You failed the vibe test, which is essential to be part of this community. do your own research and try again."}
               </p>
-              <Link href="/">
+              <Link
+                href={{
+                  pathname: `/token/${params.id}`,
+                  query: {
+                    passed: error === "accepted" ? "true" : "false",
+                  },
+                }}
+              >
                 <h3>CLOSE</h3>
               </Link>
             </div>

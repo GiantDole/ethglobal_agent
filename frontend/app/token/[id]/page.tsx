@@ -92,7 +92,7 @@ function TokenDetail() {
   >([]);
 
   // Mock variable for token access - replace with actual implementation later
-  const [hasTokenAccess] = useState(false);
+  const [hasTokenAccess, setHasTokenAccess] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -141,6 +141,14 @@ function TokenDetail() {
       fetchPriceData();
     }
   }, [params.id]);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const passed = searchParams.get("passed");
+    if (passed && passed === "true") {
+      setHasTokenAccess(true);
+    }
+  }, []);
 
   if (loading)
     return (
