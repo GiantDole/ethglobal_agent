@@ -38,6 +38,10 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Add filtering logic for active and future tokens
+  const activeTokens = tokens.filter(token => token.status === 1);
+  const futureTokens = tokens.filter(token => token.status === 0);
+
   useEffect(() => {
     const fetchTokens = async () => {
       try {
@@ -88,7 +92,7 @@ export default function Page() {
           <Image src={Star} alt="Star" />
         </div>
         <div className="flex flex-wrap gap-6 mt-5 justify-center sm:justify-start">
-          {tokens.map((token) => (
+          {activeTokens.map((token) => (
             <Link key={token.id} href={`/token/${token.id}`}>
               <div className="w-60 p-2 cursor-pointer">
                 <div className="relative flex items-center justify-center">
@@ -153,12 +157,12 @@ export default function Page() {
           <Image src={Star} alt="Star" />
         </div>
         <div className="flex flex-wrap gap-6 mt-5 justify-center sm:justify-start">
-          {tokens.map((token) => (
+          {futureTokens.map((token) => (
             <Link key={token.id} href={`/token/${token.id}`}>
               <div className="w-60 p-2 cursor-pointer border border-[#FF8585]">
                 <div className="relative flex items-center justify-center">
                   <Image
-                    src={"/images/avatar.png"}
+                    src={token.image_url}
                     alt={token.name}
                     width={234}
                     height={234}
