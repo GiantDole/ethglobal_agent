@@ -15,18 +15,21 @@ import { AgentService } from "../services/agentService";
 import logger from "../config/logger";
 import { checkSuccessfulInteraction } from "../services/interactionService";
 import redis from "../database/redis";
+import { CovalentAgentService } from "../services/covalentAgentService";
 
 export class InteractionController {
-	private agentService: AgentService;
+	// private agentService: AgentService;
+	private covalentAgentService: CovalentAgentService;
 
 	constructor() {
-		this.agentService = new AgentService();
+		// this.agentService = new AgentService();
+		this.covalentAgentService = new CovalentAgentService();
 	}
 
 	async evaluateResponse(req: Request, res: Response): Promise<Response> {
 		try {
 			const { projectId } = req.params;
-			var { answer, reset } = req.body;
+			var { answer, reset, walletAddress } = req.body;
 			const userId = await privyService.getUserIdFromAccessToken(req);
 
 			logger.info(
@@ -37,6 +40,7 @@ export class InteractionController {
 			let conversationState;
 
 			if (reset) {
+				// Reset the conversation if requested
 				conversationState = await resetProjectConversation({
 					projectId,
 					userId,
@@ -56,13 +60,15 @@ export class InteractionController {
 				answer = "Requesting first question...";
 			}
 
-			const result = await this.agentService.evaluateResponse(
+			const result = await this.covalentAgentService.evaluateResponse(
 				answer,
-				conversationState
+				conversationState,
+				projectId,
+				walletAddress
 			);
 
-			if (result.decision === "complete" || result.decision === "failed") {
-				result.conversationState.access = result.decision === "complete";
+			if (result.decision === "accept" || result.decision === "reject") {
+				result.conversationState.access = result.decision === "accept";
 				result.conversationState.final = true;
 				await saveProjectInteraction({
 					projectId,
@@ -71,7 +77,7 @@ export class InteractionController {
 					decision: result.decision,
 				});
 
-				if (result.decision === "complete") {
+				if (result.decision === "accept") {
 					result.conversationState.tokenAllocation = await getTokenAllocation({
 						projectId,
 						userId,
@@ -91,8 +97,6 @@ export class InteractionController {
 				message: result.nextMessage,
 				shouldContinue: result.shouldContinue,
 				decision: result.decision,
-				knowledgeFeedback: result.knowledgeFeedback,
-				vibeFeedback: result.vibeFeedback,
 			});
 		} catch (error: unknown) {
 			const errorMessage =
@@ -141,31 +145,24 @@ export const generateSignature = async (
 		const { projectId } = req.params;
 		const { userWalletAddress } = req.body;
 
-    const tokenData = await getProjectToken(projectId);
-    if (!tokenData || !tokenData.token_address) {
-      return res.status(404).json({ error: 'Token address not found for project' });
-    }
-    const tokenAddress: string = tokenData.token_address;
+		const tokenData = await getProjectToken(projectId);
+		if (!tokenData || !tokenData.token_address) {
+			return res
+				.status(404)
+				.json({ error: "Token address not found for project" });
+		}
+		const tokenAddress: string = tokenData.token_address;
 
-    const userId = await privyService.getUserIdFromAccessToken(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
-    
-    const userSession = await redis.get(`session:${userId}`);
-    if (!userSession) {
-      return res.status(401).json({ error: 'User session not found' });
-    }
-    const sessionData = JSON.parse(userSession);
-    
-    if (sessionData.walletAddress !== "" && sessionData.walletAddress !== userWalletAddress) {
-      //return res.status(401).json({ error: 'User claimed signature for a different wallet address already' });
-    } else if (sessionData.walletAddress === "") {
-      if (userWalletAddress === "") {
-        return res.status(401).json({ error: 'User wallet address is required' });
-      }
-      sessionData.walletAddress = userWalletAddress;
-    }
+		const userId = await privyService.getUserIdFromAccessToken(req);
+		if (!userId) {
+			return res.status(401).json({ error: "User not authenticated" });
+		}
+
+		const userSession = await redis.get(`session:${userId}`);
+		if (!userSession) {
+			return res.status(401).json({ error: "User session not found" });
+		}
+		const sessionData = JSON.parse(userSession);
 
 		if (
 			sessionData.walletAddress !== "" &&

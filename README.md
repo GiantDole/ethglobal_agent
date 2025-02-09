@@ -83,15 +83,76 @@ We use a **factory smart contract** to deploy a **unique token contract per proj
 
 ### AI Agent Framework
 
-Our **AI bouncer** is powered by **Covalent AI SDK**, structured into two core workflows—**Interaction** and **Briefing**—to optimize user engagement and configuration.
+Our **AI bouncer** is powered by **Covalent AI SDK**, using multiple specialized agents for evaluation:
 
-#### Interaction Workflow
+#### Core Agents
 
-##### Parallel Evaluation Agents
+1. **Knowledge Track**
 
-- **Multiple evaluation agents** run **in parallel**.
-- Currently, we use **two agents**—a **Knowledge Agent** and a **Vibe Agent**—but the framework allows for future expansion.
-- Each agent **independently scores** responses and drafts a **follow-up question**.
+   - `KnowledgeScoreAgent`: Evaluates technical understanding (0-10)
+   - `KnowledgeQuestionGenerator`: Generates contextual technical questions
+
+2. **Vibe Track**
+
+   - `VibeScoreAgent`: Assesses cultural fit and authenticity (0-10)
+   - `VibeQuestionGenerator`: Creates culture-fit questions
+
+3. **Wallet Analysis**
+
+   - `OnChainScoreAgent`: Evaluates wallet activity (first question only)
+   - `ScoreEvaluatorAgent`: Processes blockchain data into scores
+
+4. **Question Management**
+   - `QuestionGenerator`: Refines and adapts question tone
+   - Applies character-specific modifications
+   - Ensures consistent persona throughout interaction
+
+#### Agent Interaction Flow
+
+1. **Initial Evaluation**
+
+   ```typescript
+   // First interaction includes wallet analysis
+   const onChainScore = await onChainScoreAgent.evaluate(walletAddress);
+   const walletBonus = Math.min(5, onChainScore);
+
+   // Generate first question
+   const baseQuestion = await knowledgeQuestionAgent.generate();
+   const finalQuestion = await questionGenerator.modifyTone(
+   	baseQuestion,
+   	bouncerConfig.character_choice
+   );
+   ```
+
+2. **Ongoing Evaluation**
+
+   ```typescript
+   // Parallel scoring
+   const [knowledgeScore, vibeScore] = await Promise.all([
+   	knowledgeScoreAgent.evaluate(question, answer, history),
+   	vibeScoreAgent.evaluate(question, answer, history),
+   ]);
+
+   // Next question selection
+   const nextQuestion = await(
+   	knowledgeScore > vibeScore
+   		? vibeQuestionAgent.generate(history)
+   		: knowledgeQuestionAgent.generate(history)
+   );
+   ```
+
+#### Agent Configuration
+
+Each agent is configured through Supabase with:
+
+```typescript
+interface BouncerConfig {
+	mandatory_knowledge: string; // Required technical knowledge
+	project_desc: string; // Project context
+	whitepaper_knowledge: string; // Detailed technical info
+	character_choice: "stoic" | "funny" | "aggressive" | "friendly";
+}
+```
 
 ##### Subsequent Question Agent
 
