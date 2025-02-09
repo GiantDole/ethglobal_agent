@@ -4,6 +4,9 @@ import Image from "next/image";
 // Images
 import Logo from "@/assets/footer/ethglobal.svg";
 import Privy from "@/assets/footer/privy.svg";
+import Nethermind from "@/assets/footer/nethermind.png";
+import Arbitrum from "@/assets/footer/arbitrum.png";
+import Covalent from "@/assets/footer/covalent.png";
 
 export const Footer = () => {
   return (
@@ -13,13 +16,16 @@ export const Footer = () => {
           <h3 className="text-[#FF8585] tracking-[6px] text-base font-light mb-3">
             HACKED FOR
           </h3>
-          <Image src={Logo} alt="Logo" />
+          <Image src={Logo} alt="Logo" height={40} />
         </div>
         <div className="flex-1 flex flex-col gap-6">
           <h3 className="text-[#FF8585] tracking-[6px] text-base font-light">
-            SPONSORS
+            TECHNOLOGIES USED
           </h3>
-          <Image src={Privy} alt="Privy" />
+          <Image src={Privy} alt="Privy" height={35} />
+          <Image src={Nethermind} alt="Nethermind" height={40} />
+          <Image src={Arbitrum} alt="Arbitrum" height={60} />
+          <Image src={Covalent} alt="Covalent" height={35} />
         </div>
       </div>
     </div>
