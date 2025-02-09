@@ -38,14 +38,14 @@ export const Header = () => {
           : "-translate-y-full"
       }`}
     >
-      <div className="flex gap-16 items-center">
+      <div className="flex gap-4 items-center lg:gap-16">
         <h1 className="text-2xl font-bold">
           <Link href="/">
             <Image src={Logo} alt="Logo" />
           </Link>
         </h1>
         <div>
-          <ul className="hidden md:flex gap-16">
+          <ul className="hidden md:flex gap-4 lg:gap-16">
             <li>
               <a href="#">
                 <Image src={Token} alt="Token" />

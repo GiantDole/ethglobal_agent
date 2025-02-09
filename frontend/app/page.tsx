@@ -115,7 +115,7 @@ export default function Page() {
                   <p className="text-base font-bold">{token.name}</p>
                   <p>${token.token_ticker}</p>
                 </div>
-                <p className="text-xs text-[#CECECE] mb-2">
+                <p className="text-xs text-[#CECECE] mb-2 line-clamp-4 overflow-hidden h-[80px]">
                   {token.short_description}
                 </p>
                 <div className="flex items-center justify-between mb-2">
@@ -177,7 +177,7 @@ export default function Page() {
                   <p className="text-base font-bold">{token.name}</p>
                   <p>${token.token_ticker}</p>
                 </div>
-                <p className="text-xs text-[#CECECE] mb-2">
+                <p className="text-xs text-[#CECECE] mb-2 line-clamp-4 overflow-hidden h-[80px]">
                   {token.short_description}
                 </p>
                 <div className="flex items-center justify-between mb-2">
