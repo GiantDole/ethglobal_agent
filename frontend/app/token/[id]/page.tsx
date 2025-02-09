@@ -4,6 +4,35 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { usePrivy } from '@privy-io/react-auth';
+import { createClient } from '@supabase/supabase-js'
+import { Line } from 'react-chartjs-2'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js'
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+)
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 // Add this import at the top
 import TokenSwap from "@/components/ui/TokenSwap";
@@ -57,6 +86,7 @@ function TokenDetail() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [priceData, setPriceData] = useState<{ created_at: string; price: number }[]>([]);
 
   // Mock variable for token access - replace with actual implementation later
   const [hasTokenAccess] = useState(false);
@@ -88,18 +118,84 @@ function TokenDetail() {
     }
   }, [params.id]);
 
+  // Add this useEffect for fetching price data
+  useEffect(() => {
+    const fetchPriceData = async () => {
+      const { data, error } = await supabase
+        .from('TokenPrices')  // replace with your table name
+        .select('created_at, price')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching price data:', error);
+        return;
+      }
+
+      setPriceData(data || []); 
+    };
+
+    if (params.id) {
+      fetchPriceData();
+    }
+  }, [params.id]);
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
   if (!data) return <div>No data found</div>;
+
+  // Add this chart configuration
+  const chartData = {
+    labels: priceData.map(d => {
+      const date = new Date(d.created_at);
+      return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }),
+    datasets: [
+      {
+        label: 'Token Price',
+        data: priceData.map(d => d.price),
+        borderColor: '#FF8585',
+        backgroundColor: 'rgba(255, 133, 133, 0.1)',
+        tension: 0.1,
+        fill: true
+      }
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Token Price History'
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
+  };
 
   return (
     <main>
       <div className="mb-16">
         <div className="w-[70vw] mx-auto">
-          <div className="my-24">
-            <div className="relative h-40 flex items-center justify-center">
-              <Image src={Net} alt="Net" className="absolute" />
-              <Image src={Bouncer} alt="Bouncer" className="absolute" />
+          <div className="my-10">
+            <div className="h-[420px] w-[100%]">
+              {priceData.length > 0 ? (
+                <Line data={chartData} options={chartOptions} style={{ width: '100%', height: '100%' }} />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  Loading price data...
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-6 mt-12 p-4 md:p-0">
@@ -113,7 +209,7 @@ function TokenDetail() {
               />
               <Image src={Frame} alt="Frame" className="relative" />
             </div>
-            <h1 className="text-2xl md:text-6xl font-bold">
+            <h1 className="text-2xl md:text-4xl font-bold">
               {data.name} - ${data.token_ticker}
             </h1>
             <Image src={World} alt="World" />
@@ -150,9 +246,6 @@ function TokenDetail() {
                   <p className="font-medium">Current Progress: {data.bondingCurveProgress}%</p>
                   <p>{data.bondingCurve}</p>
                 </div>
-              </div>
-              <div>
-                {/* <Image src={Stats} alt="Stats" className="mb-4" /> */}
               </div>
             </div>
             <div className="flex-1 flex flex-col gap-8">
