@@ -174,7 +174,7 @@ function TokenDetail() {
                     </button>
                   ) : !hasTokenAccess ? (
                     <Link href={`/token/${data.id}/bouncer`}>
-                      <button className="w-full py-3 px-4 bg-[#000000] text-white rounded-lg hover:bg-opacity-90">
+                      <button className="w-full py-3 px-4 bg-[#000000] text-[#FF8585] rounded-lg hover:bg-opacity-90">
                         Pass the Bouncer
                       </button>
                     </Link>

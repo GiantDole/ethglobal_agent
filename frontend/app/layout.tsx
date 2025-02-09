@@ -8,8 +8,36 @@ import Head from "next/head";
 import { Header, Footer } from "@/components/ui";
 
 export const metadata: Metadata = {
-  title: "Privy Auth Demo",
-  description: "Privy Auth Demo",
+  title: "bouncer.ai",
+  description: "bouncer.ai is a platform that allows anyone to launch tokens or communities while ensuring access and allocation are managed by an AI bouncer. Users interact with the bouncer via voice, and it intelligently decides who gets in, how many tokens they receive, and at what cost.",
+  icons: {
+    icon: "/favicons/star.png",
+  },
+  openGraph: {
+    title: 'bouncer.ai',
+    description:
+      'bouncer.ai is a platform that allows anyone to launch tokens or communities while ensuring access and allocation are managed by an AI bouncer. Users interact with the bouncer via voice, and it intelligently decides who gets in, how many tokens they receive, and at what cost.',
+    url: 'https://bouncer-ai.xyz',
+    siteName: 'https://bouncer-ai.xyz',
+    images: [
+      {
+        url: '/favicons/star.png', // Path relative to the public directory
+        width: 1200,
+        height: 630,
+        alt: 'bouncer.ai - The AI bouncer platform',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'bouncer.ai',
+    description:
+      'bouncer.ai is a platform that allows anyone to launch tokens or communities while ensuring access and allocation are managed by an AI bouncer. Users interact with the bouncer via voice, and it intelligently decides who gets in, how many tokens they receive, and at what cost.',
+    creator: '@bouncer_ai',
+    images: ['/favicons/star.png'],
+  },
 };
 
 const adelleSans = localFont({
