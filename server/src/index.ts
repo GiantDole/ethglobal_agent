@@ -25,9 +25,6 @@ app.use(express.json());
 
 // Add detailed cookie logging middleware
 app.use((req: Request, res: Response, next) => {
-  console.log('Parsed Cookies:', req.cookies);
-  console.log('Raw Cookie Header:', req.headers.cookie);
-  console.log('All Headers:', req.headers);
   next();
 });
 
