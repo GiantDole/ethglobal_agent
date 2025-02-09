@@ -12,6 +12,7 @@ import Logo from "@/assets/header/logo.svg";
 import Token from "@/assets/header/nav_token.svg";
 import About from "@/assets/header/nav_about.svg";
 import Documentation from "@/assets/header/nav_documentation.svg";
+import Create from "@/assets/header/nav_create.svg";
 
 export const Header = () => {
   const pathname = usePathname();
@@ -59,6 +60,11 @@ export const Header = () => {
             <li>
               <a href="#">
                 <Image src={Documentation} alt="Documentation" />
+              </a>
+            </li>
+            <li>
+              <a href="#">
+                <Image src={Create} alt="Create" />
               </a>
             </li>
           </ul>
