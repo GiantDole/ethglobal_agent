@@ -163,8 +163,13 @@ import { ConversationState } from "../types/conversation";
         // Base allocation of 900 tokens
         const baseAllocation = 800;
         
-        // Calculate final allocation
-        return Math.round(baseAllocation * multiplier * gaussianFactor);
+        // Generate random adjustment between 0.85 and 1.15 (±15%)
+        const minRandomFactor = 0.85;
+        const maxRandomFactor = 1.15;
+        const randomFactor = minRandomFactor + Math.random() * (maxRandomFactor - minRandomFactor);
+        
+        // Calculate final allocation with randomness
+        return Math.round(baseAllocation * multiplier * gaussianFactor * randomFactor);
     } catch (err) {
         throw new Error(
             `Failed to calculate token allocation: ${
