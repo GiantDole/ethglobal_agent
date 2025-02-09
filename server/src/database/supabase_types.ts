@@ -75,6 +75,41 @@ export type Database = {
           },
         ]
       }
+      BouncerConfig: {
+        Row: {
+          character_choice: string | null
+          created_at: string
+          id: number
+          mandatory_knowledge: string | null
+          project_desc: string | null
+          whitepaper_knowledge: string | null
+        }
+        Insert: {
+          character_choice?: string | null
+          created_at?: string
+          id?: number
+          mandatory_knowledge?: string | null
+          project_desc?: string | null
+          whitepaper_knowledge?: string | null
+        }
+        Update: {
+          character_choice?: string | null
+          created_at?: string
+          id?: number
+          mandatory_knowledge?: string | null
+          project_desc?: string | null
+          whitepaper_knowledge?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "BouncerConfig_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "Projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Interactions: {
         Row: {
           created_at: string

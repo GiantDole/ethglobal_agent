@@ -145,24 +145,31 @@ export const generateSignature = async (
 		const { projectId } = req.params;
 		const { userWalletAddress } = req.body;
 
-		const tokenData = await getProjectToken(projectId);
-		if (!tokenData || !tokenData.token_address) {
-			return res
-				.status(404)
-				.json({ error: "Token address not found for project" });
-		}
-		const tokenAddress: string = tokenData.token_address;
+    const tokenData = await getProjectToken(projectId);
+    if (!tokenData || !tokenData.token_address) {
+      return res.status(404).json({ error: 'Token address not found for project' });
+    }
+    const tokenAddress: string = tokenData.token_address;
 
-		const userId = await privyService.getUserIdFromAccessToken(req);
-		if (!userId) {
-			return res.status(401).json({ error: "User not authenticated" });
-		}
-
-		const userSession = await redis.get(`session:${userId}`);
-		if (!userSession) {
-			return res.status(401).json({ error: "User session not found" });
-		}
-		const sessionData = JSON.parse(userSession);
+    const userId = await privyService.getUserIdFromAccessToken(req);
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    const userSession = await redis.get(`session:${userId}`);
+    if (!userSession) {
+      return res.status(401).json({ error: 'User session not found' });
+    }
+    const sessionData = JSON.parse(userSession);
+    
+    if (sessionData.walletAddress !== "" && sessionData.walletAddress !== userWalletAddress) {
+      return res.status(401).json({ error: 'User claimed signature for a different wallet address already' });
+    } else if (sessionData.walletAddress === "") {
+      if (userWalletAddress === "") {
+        return res.status(401).json({ error: 'User wallet address is required' });
+      }
+      sessionData.walletAddress = userWalletAddress;
+    }
 
 		if (
 			sessionData.walletAddress !== "" &&
