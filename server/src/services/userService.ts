@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import redis from '../database/redis';
 import supabaseClient from "../database/supabase";
 import { SessionData } from '../types/conversation';
+import logger from '../config/logger';
 
 interface PrivyLinkedAccount {
   type: string;
@@ -203,6 +204,12 @@ export const generateSignature = async (
     nonce = sessionData.projects[projectId].nonce;
   }
 
+  logger.info({
+    evmAddress,
+    nonce,
+    tokenContract,
+    tokenAllocation
+  }, "Generating signature");
   // Create the message hash using Solidity's encoding standards.
   // Note: Solidity does not support float values so we convert tokenAllocation to an integer representation.
   const messageHash = ethers.keccak256(
