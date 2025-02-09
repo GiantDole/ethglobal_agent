@@ -18,7 +18,6 @@ import StartSpeaker from "@/assets/bouncer/microphone_start.svg";
 import StopSpeaker from "@/assets/bouncer/microphone_stop.svg";
 import Rejection from "@/assets/bouncer/rejection.svg";
 import Approval from "@/assets/bouncer/approval.svg";
-import { P } from "@privy-io/react-auth/dist/dts/types-Cj9jWnPs";
 
 declare global {
   interface Window {
@@ -333,17 +332,22 @@ function SpeechInterface() {
                     <Image src={StartSpeaker} alt="Start" />
                   )}
                 </button>
-                {messages.length === 1 && (
+                {!isListening && !isPlaying && messages.length > 0 && (
                   <p className="text-gray-300 text-center text-sm mt-2">
-                    Click to start talking.
+                    Click to start talking
+                  </p>
+                )}
+                {isListening && (
+                  <p className="text-green-500 text-center text-sm mt-2">
+                    Listening...
+                  </p>
+                )}
+                {isPlaying && (
+                  <p className="text-gray-300 text-center text-sm mt-2">
+                    Please wait...
                   </p>
                 )}
               </div>
-              {/* {isListening && (
-                  <div className="text-center mt-2 text-green-600">
-                    {interimTranscript || "Listening..."}
-                  </div>
-                )} */}
             </div>
           )}
         </div>
