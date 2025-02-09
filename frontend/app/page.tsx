@@ -14,7 +14,7 @@ import Star from "@/assets/landing/star.svg";
 import Active from "@/assets/landing/active.svg";
 import Orbit from "@/assets/landing/orbit.svg";
 import Future from "@/assets/landing/future.svg";
-import Frame from "@/assets/landing/frame.png";
+import Background from "@/assets/landing/background.png";
 import World from "@/assets/landing/world.svg";
 import Fire from "@/assets/landing/fire.svg";
 import Target from "@/assets/landing/target.svg";
@@ -80,9 +80,9 @@ export default function Page() {
     <main>
       <div className="relative z-0">
         <Image
-          src={Badge}
-          alt="Badge"
-          className="absolute top-0 left-[2%] z-10 sm:right-[20%] left-auto"
+          src={Background}
+          alt="Background"
+          className="absolute top-0 left-0 w-full min-h-[100vh] object-cover"
         />
         <div className="relative pt-48">
           <Image src={Hero} alt="Hero" className="mx-auto relative z-20" />
