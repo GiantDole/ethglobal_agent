@@ -191,7 +191,7 @@ export const generateSignature = async (
   }
 
   // Retrieve tokenAllocation from the project session.
-  const tokenAllocation = projectSession.tokenAllocation;
+  const tokenAllocation = Math.floor(projectSession.tokenAllocation);
 
   var nonce;
 
@@ -208,7 +208,7 @@ export const generateSignature = async (
   const messageHash = ethers.keccak256(
     ethers.AbiCoder.defaultAbiCoder().encode(
       ["address", "uint256", "address", "uint256"],
-      [evmAddress, nonce, tokenContract, Math.floor(tokenAllocation)]
+      [evmAddress, nonce, tokenContract, tokenAllocation]
     )
   );
 

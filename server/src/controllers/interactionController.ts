@@ -130,6 +130,9 @@ export const generateSignature = async (req: Request, res: Response): Promise<Re
     if (sessionData.walletAddress !== "" && sessionData.walletAddress !== userWalletAddress) {
       return res.status(401).json({ error: 'User claimed signature for a different wallet address already' });
     } else if (sessionData.walletAddress === "") {
+      if (userWalletAddress === "") {
+        return res.status(401).json({ error: 'User wallet address is required' });
+      }
       sessionData.walletAddress = userWalletAddress;
     }
 
