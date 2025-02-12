@@ -58,7 +58,8 @@ export class InteractionController {
 
 			const result = await this.agentService.evaluateResponse(
 				answer,
-				conversationState
+				conversationState,
+				projectId
 			);
 
 			if (result.decision === "complete" || result.decision === "failed") {
@@ -81,7 +82,7 @@ export class InteractionController {
 				}
 			}
 
-      logger.info({ result }, "Result");
+			logger.info({ result }, "Result");
 
 			await updateProjectConversationHistory({
 				projectId,
@@ -92,7 +93,7 @@ export class InteractionController {
 			return res.status(200).json({
 				message: result.nextMessage,
 				shouldContinue: result.shouldContinue,
-				decision: result.decision
+				decision: result.decision,
 				//knowledgeFeedback: result.knowledgeFeedback,
 				//vibeFeedback: result.vibeFeedback,
 			});
@@ -143,40 +144,48 @@ export const generateSignature = async (
 		const { projectId } = req.params;
 		const { userWalletAddress } = req.body;
 
-    const tokenData = await getProjectToken(projectId);
-    if (!tokenData || !tokenData.token_address) {
-      return res.status(404).json({ error: 'Token address not found for project' });
-    }
-    const tokenAddress: string = tokenData.token_address;
+		const tokenData = await getProjectToken(projectId);
+		if (!tokenData || !tokenData.token_address) {
+			return res
+				.status(404)
+				.json({ error: "Token address not found for project" });
+		}
+		const tokenAddress: string = tokenData.token_address;
 
-    const userId = await privyService.getUserIdFromAccessToken(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
-    
-    const userSession = await redis.get(`session:${userId}`);
-    if (!userSession) {
-      return res.status(401).json({ error: 'User session not found' });
-    }
-    const sessionData = JSON.parse(userSession);
-    
-    if (sessionData.walletAddress !== "" && sessionData.walletAddress !== userWalletAddress) {
-      //return res.status(401).json({ error: 'User claimed signature for a different wallet address already' });
-    } else if (sessionData.walletAddress === "") {
-      if (userWalletAddress === "") {
-        return res.status(401).json({ error: 'User wallet address is required' });
-      }
-      sessionData.walletAddress = userWalletAddress;
-    }
+		const userId = await privyService.getUserIdFromAccessToken(req);
+		if (!userId) {
+			return res.status(401).json({ error: "User not authenticated" });
+		}
+
+		const userSession = await redis.get(`session:${userId}`);
+		if (!userSession) {
+			return res.status(401).json({ error: "User session not found" });
+		}
+		const sessionData = JSON.parse(userSession);
 
 		if (
 			sessionData.walletAddress !== "" &&
 			sessionData.walletAddress !== userWalletAddress
 		) {
-			return res.status(401).json({
-				error: "User claimed signature for a different wallet address already",
-			});
+			//return res.status(401).json({ error: 'User claimed signature for a different wallet address already' });
 		} else if (sessionData.walletAddress === "") {
+			if (userWalletAddress === "") {
+				return res
+					.status(401)
+					.json({ error: "User wallet address is required" });
+			}
+			sessionData.walletAddress = userWalletAddress;
+		}
+
+		// if (
+		// 	sessionData.walletAddress !== "" &&
+		// 	sessionData.walletAddress !== userWalletAddress
+		// ) {
+		// 	// return res.status(401).json({
+		// 	// 	error: "User claimed signature for a different wallet address already",
+		// 	// });
+		// } else 
+		if (sessionData.walletAddress === "") {
 			sessionData.walletAddress = userWalletAddress;
 		}
 
