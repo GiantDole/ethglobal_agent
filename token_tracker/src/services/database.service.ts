@@ -32,7 +32,7 @@ class DatabaseService {
     try {
       const { error } = await this.supabase
         .from('TokenPrices')
-        .insert(priceData);
+        .insert([priceData]);
 
       if (error) throw error;
     } catch (error) {
