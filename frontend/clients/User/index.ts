@@ -6,12 +6,11 @@ class UserClient extends Client {
   }
 
   async authenticate() {
-
-    return this.request('/register', {
-      method: 'POST',
-      credentials: 'include', // Include cookies in the request
+    return this.request("/register", {
+      method: "POST",
+      credentials: "include", // Include cookies in the request
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
   }

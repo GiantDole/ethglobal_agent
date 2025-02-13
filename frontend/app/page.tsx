@@ -9,7 +9,6 @@ import ProjectClient from "../clients/Projects";
 // Images
 import Hero from "@/assets/hero/hero.png";
 import Net from "@/assets/hero/net.svg";
-import Badge from "@/assets/hero/hero_badge.svg";
 import Star from "@/assets/landing/star.svg";
 import Active from "@/assets/landing/active.svg";
 import Orbit from "@/assets/landing/orbit.svg";
@@ -78,20 +77,20 @@ export default function Page() {
 
   return (
     <main>
-      <div className="relative z-0">
+      <div className="relative z-[0]">
         <Image
           src={Background}
           alt="Background"
           className="absolute top-0 left-0 w-full min-h-[100vh] object-cover max-h-[1080px]"
         />
         <div className="relative pt-48">
-          <Image src={Hero} alt="Hero" className="mx-auto relative z-20" />
+          <Image src={Hero} alt="Hero" className="mx-auto relative" />
         </div>
         <div>
           <Image src={Net} alt="Net" className="ml-auto" />
         </div>
       </div>
-      <div className="container mx-auto">
+      <div className="relative container mx-auto z-[1]">
         <div className="flex justify-between">
           <Image src={Star} alt="Star" />
           <Image src={Active} alt="Active" />

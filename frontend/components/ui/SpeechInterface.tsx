@@ -298,7 +298,7 @@ function SpeechInterface() {
                   },
                 }}
               >
-                <h3>CLOSE</h3>
+                <h3>TOKEN PAGE</h3>
               </Link>
             </div>
           ) : (
@@ -306,11 +306,11 @@ function SpeechInterface() {
               {/* Chat messages */}
               <div className="flex-1 mb-4 space-y-2 overflow-y-hidden relative">
                 {/* Gradient overlay */}
-                <div
+                {/* <div
                   className={`absolute top-0 left-0 right-0 ${
                     messages.length > 2 ? "h-56" : "h-0"
                   } bg-gradient-to-b from-black to-transparent z-10`}
-                />
+                /> */}
                 {messages.map((message, index) => (
                   <div key={index} className={`flex`}>
                     <div

@@ -58,7 +58,10 @@ export const Header = () => {
               </a>
             </li>
             <li>
-              <a href="#">
+              <a
+                href="https://github.com/GiantDole/ethglobal_agent/blob/main/README.md"
+                target="_blank"
+              >
                 <Image src={Documentation} alt="Documentation" />
               </a>
             </li>

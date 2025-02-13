@@ -15,6 +15,22 @@ export default function BouncerPage() {
   const { user } = usePrivy();
 
   useEffect(() => {
+    const isBrave = (navigator as any).brave && (typeof (navigator as any).brave.isBrave === "function");
+    const isChrome = /Chrome/.test(navigator.userAgent) && /OPR|Brave/.test(navigator.userAgent) === false;
+    
+    if (isBrave) {
+      toast.error("Please use Chrome browser for the best experience"); 
+      router.replace("/");
+    }
+
+    if (!isChrome) {
+      toast.error("Please use Chrome browser for the best experience");
+      router.replace("/");
+    }
+  }, []);
+
+  // Auth check useEffect
+  useEffect(() => {
     if (!user) {
       toast.error("You must be logged in to access this page");
       router.push(pathname.split("/bouncer")[0] || "/");

@@ -5,16 +5,19 @@ export class Client {
     this.url = url.replace(/^https?:\/\/[^/]+/, '');
   }
 
-  async request(path: string, options: RequestInit = {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
+  async request(
+    path: string,
+    options: RequestInit = {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
     },
-  }) {
+  ) {
     try {
       const response = await fetch(`${this.url}${path}`, {
         ...options,
-        credentials: 'include',
+        credentials: "include",
       });
 
       if (!response.ok) {

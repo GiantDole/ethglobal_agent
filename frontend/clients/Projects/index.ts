@@ -6,7 +6,7 @@ class ProjectClient extends Client {
   }
 
   async getAll() {
-    return this.request('/');
+    return this.request("/");
   }
 
   async get(id: string) {

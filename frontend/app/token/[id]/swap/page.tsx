@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
 // import { SwapWidget } from '@uniswap/widgets'
 // import '@uniswap/widgets/fonts.css'
-import { DISPLAY_DATA } from '@/constants/mockData'
+import { DISPLAY_DATA } from "@/constants/mockData";
 
 const SwapPage = () => {
   // You should replace these with your actual JSON RPC endpoints
@@ -28,7 +28,7 @@ const SwapPage = () => {
           <section>
             <h2 className="text-xl font-bold mb-3">Tokenomics</h2>
             <p>{DISPLAY_DATA.tokenomics}</p>
-          </section> 
+          </section>
 
           <section>
             <h2 className="text-xl font-bold mb-3">Exclusivity</h2>
@@ -38,9 +38,9 @@ const SwapPage = () => {
           <section>
             <h2 className="text-xl font-bold mb-3">Progress</h2>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div 
-                className="bg-blue-600 h-2.5 rounded-full" 
-                style={{ width: '20%' }}
+              <div
+                className="bg-blue-600 h-2.5 rounded-full"
+                style={{ width: "20%" }}
               ></div>
             </div>
             <p className="mt-2">20% Complete</p>

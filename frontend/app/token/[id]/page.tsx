@@ -17,6 +17,8 @@ import {
   Legend,
 } from "chart.js";
 
+import { Modal } from "@/components/ui";
+
 // Register ChartJS components
 ChartJS.register(
   CategoryScale,
@@ -38,7 +40,6 @@ const supabase = createClient(
 import TokenSwap from "@/components/ui/TokenSwap";
 
 // Images
-import Frame from "@/assets/landing/frame.png";
 import World from "@/assets/landing/world.svg";
 import About from "@/assets/token_detail/about.svg";
 import Tokenomics from "@/assets/token_detail/tokenomics.svg";
@@ -90,6 +91,8 @@ function TokenDetail() {
   const [priceData, setPriceData] = useState<
     { created_at: string; price: number }[]
   >([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [eligibleAmount, setEligibleAmount] = useState(0);
 
   // Mock variable for token access - replace with actual implementation later
   const [hasTokenAccess, setHasTokenAccess] = useState(false);
@@ -127,6 +130,7 @@ function TokenDetail() {
       const { data, error } = await supabase
         .from("TokenPrices") // replace with your table name
         .select("created_at, price")
+        .eq("project_id", params.id)
         .order("created_at", { ascending: true });
 
       if (error) {
@@ -146,6 +150,7 @@ function TokenDetail() {
     const searchParams = new URLSearchParams(window.location.search);
     const passed = searchParams.get("passed");
     if (passed && passed === "true") {
+      setModalOpen(true);
       setHasTokenAccess(true);
     }
   }, []);
@@ -171,20 +176,22 @@ function TokenDetail() {
 
   // Add this chart configuration
   const chartData = {
-    labels: priceData.map((d) => {
-      const date = new Date(d.created_at);
-      return date.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    }),
+    labels: priceData
+      .filter((d) => d.price !== 0.001)
+      .map((d) => {
+        const date = new Date(d.created_at);
+        return date.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }),
     datasets: [
       {
         label: "Token Price",
-        data: priceData.map((d) => d.price),
+        data: priceData.filter((d) => d.price !== 0.001).map((d) => d.price),
         borderColor: "#FF8585",
         backgroundColor: "rgba(255, 133, 133, 0.1)",
-        tension: 0.1,
+        tension: 0.4,
         fill: true,
       },
     ],
@@ -204,13 +211,23 @@ function TokenDetail() {
     },
     scales: {
       y: {
-        beginAtZero: true,
+        beginAtZero: false,
       },
     },
   };
 
   return (
     <main>
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
+        <div className="my-6 px-4">
+          <h1 className="mb-4 text-center font-bold text-2xl">
+            Congrats &#127881;
+          </h1>
+          <p>
+            You are eligible to buy {eligibleAmount} {data.name} tokens.
+          </p>
+        </div>
+      </Modal>
       <div className="mb-16">
         <div className="container mx-auto">
           <div className="my-10">
@@ -319,6 +336,7 @@ function TokenDetail() {
                     <TokenSwap
                       tokenTicker={data.token_ticker}
                       tokenBondingAddress={data.token_address}
+                      setEligibleAmount={setEligibleAmount}
                     />
                   )}
                 </div>
