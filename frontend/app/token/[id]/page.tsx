@@ -224,7 +224,7 @@ function TokenDetail() {
             Congrats &#127881;
           </h1>
           <p>
-            You are eligible to buy {eligibleAmount} {data.name} tokens.
+            The bouncer has allocated {eligibleAmount} {data.name} tokens.
           </p>
         </div>
       </Modal>
