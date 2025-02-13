@@ -1,20 +1,27 @@
 export class Client {
   url: string;
 
-  constructor(url: string) {
-    this.url = url.replace(/^https?:\/\/[^/]+/, '');
+  constructor(url?: string) {
+    this.url = url
+      ? url.endsWith("/")
+        ? url.slice(0, -1)
+        : url
+      : "http://localhost:8000";
   }
 
-  async request(path: string, options: RequestInit = {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
+  async request(
+    path: string,
+    options: RequestInit = {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
     },
-  }) {
+  ) {
     try {
       const response = await fetch(`${this.url}${path}`, {
         ...options,
-        credentials: 'include',
+        credentials: "include",
       });
 
       if (!response.ok) {

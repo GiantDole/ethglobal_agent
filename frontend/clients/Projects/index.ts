@@ -1,12 +1,13 @@
 import { Client } from "..";
 
 class ProjectClient extends Client {
-  constructor() {
-    super('/api/projects');
+  constructor(url?: string) {
+    super(url);
+    this.url = `${this.url}/api/projects`;
   }
 
   async getAll() {
-    return this.request('/');
+    return this.request("/");
   }
 
   async get(id: string) {

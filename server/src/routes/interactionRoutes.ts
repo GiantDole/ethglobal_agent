@@ -11,7 +11,7 @@ router.post(
 	interactionController.evaluateResponse.bind(interactionController)
 );
 
-router.get('/:projectId/signature', successfulProjectInteractionMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:projectId/signature', successfulProjectInteractionMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         await generateSignature(req, res);
     } catch (error) {

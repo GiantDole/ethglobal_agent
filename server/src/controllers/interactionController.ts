@@ -149,16 +149,25 @@ export const generateSignature = async (
     }
     const tokenAddress: string = tokenData.token_address;
 
+	logger.info(
+		{ projectId, userWalletAddress, tokenAddress },
+		"Generating user signature."
+	);
+
     const userId = await privyService.getUserIdFromAccessToken(req);
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
+
+	logger.info({ userId, projectId }, "Generating signature");
     
     const userSession = await redis.get(`session:${userId}`);
     if (!userSession) {
       return res.status(401).json({ error: 'User session not found' });
     }
     const sessionData = JSON.parse(userSession);
+
+	logger.info({ sessionData }, "Session data retrieved");
     
     if (sessionData.walletAddress !== "" && sessionData.walletAddress !== userWalletAddress) {
       //return res.status(401).json({ error: 'User claimed signature for a different wallet address already' });
@@ -173,9 +182,9 @@ export const generateSignature = async (
 			sessionData.walletAddress !== "" &&
 			sessionData.walletAddress !== userWalletAddress
 		) {
-			return res.status(401).json({
-				error: "User claimed signature for a different wallet address already",
-			});
+			// return res.status(401).json({
+			// 	error: "User claimed signature for a different wallet address already",
+			// });
 		} else if (sessionData.walletAddress === "") {
 			sessionData.walletAddress = userWalletAddress;
 		}

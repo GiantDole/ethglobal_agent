@@ -9,7 +9,6 @@ import ProjectClient from "../clients/Projects";
 // Images
 import Hero from "@/assets/hero/hero.png";
 import Net from "@/assets/hero/net.svg";
-import Badge from "@/assets/hero/hero_badge.svg";
 import Star from "@/assets/landing/star.svg";
 import Active from "@/assets/landing/active.svg";
 import Orbit from "@/assets/landing/orbit.svg";
@@ -33,7 +32,7 @@ type Token = {
   exclusivity: number;
 };
 
-const projectClient = new ProjectClient();
+const projectClient = new ProjectClient(process.env.NEXT_PUBLIC_API_URL);
 
 export default function Page() {
   const [tokens, setTokens] = useState<Token[]>([]);
