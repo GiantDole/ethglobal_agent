@@ -90,14 +90,6 @@ export class AgentService {
 				this.knowledgeAgent.evaluateAnswer(conversationHistory, answer),
 				this.vibeAgent.evaluateAnswer(conversationHistory, answer),
 			]);
-			knowledgeEval.nextQuestion = await this.toneAgent.modifyTone(
-				knowledgeEval.nextQuestion,
-				bouncerConfig.character_choice
-			);
-			vibeEval.nextQuestion = await this.toneAgent.modifyTone(
-				vibeEval.nextQuestion,
-				bouncerConfig.character_choice
-			);
 
 			const knowledgeScore = knowledgeEval.score;
 			const vibeScore = vibeEval.score;
@@ -138,6 +130,7 @@ export class AgentService {
 				shouldContinue = true;
 			}
 
+			// Adding the user's answer to the last question if it exists.
 			if (conversationHistory.length > 0) {
 				logger.info(
 					{ answer, historyLength: conversationHistory.length },
@@ -146,16 +139,22 @@ export class AgentService {
 				conversationHistory[conversationHistory.length - 1].answer = answer;
 			}
 
-			// Only add next question if continuing
+			// Only add next question if continuing.
+			// Originally, the code tone-modified each candidate then picked one.
+			// Now, we select the raw next question based on scores and modify it only once.
+			let modifiedNextQuestion = "";
 			if (shouldContinue && !passed) {
-				const nextQuestion =
+				const rawNextQuestion =
 					knowledgeEval.score > vibeEval.score
 						? vibeEval.nextQuestion
 						: knowledgeEval.nextQuestion;
-
-				logger.info({ nextQuestion }, "Adding next question");
+				modifiedNextQuestion = await this.toneAgent.modifyTone(
+					rawNextQuestion,
+					bouncerConfig.character_choice
+				);
+				logger.info({ nextQuestion: modifiedNextQuestion }, "Adding next question");
 				conversationHistory.push({
-					question: nextQuestion,
+					question: modifiedNextQuestion,
 					answer: null,
 				});
 			}
@@ -176,8 +175,8 @@ export class AgentService {
 					vibeFeedback: vibeEval.feedback,
 					shouldContinue: false,
 					conversationState: conversationState,
-					knowledgeScore,
-					vibeScore,
+					knowledgeScore: knowledgeEval.score,
+					vibeScore: vibeEval.score,
 				};
 			}
 
@@ -188,18 +187,15 @@ export class AgentService {
 				: "failed";
 
 			const result = {
-				nextMessage: passed
-					? null
-					: knowledgeEval.score > vibeEval.score
-					? vibeEval.nextQuestion
-					: knowledgeEval.nextQuestion,
+				// Use the tone-modified next question if not passed.
+				nextMessage: passed ? null : modifiedNextQuestion,
 				decision,
 				knowledgeFeedback: knowledgeEval.feedback,
 				vibeFeedback: vibeEval.feedback,
 				shouldContinue,
 				conversationState: conversationState,
-				knowledgeScore,
-				vibeScore,
+				knowledgeScore: knowledgeEval.score,
+				vibeScore: vibeEval.score,
 			};
 			logger.info(
 				{ decision: result.decision, nextMessage: result.nextMessage },
