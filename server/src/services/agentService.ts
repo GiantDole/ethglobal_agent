@@ -2,17 +2,25 @@ import { KnowledgeAgent } from "../agents/notUsedAgents/knowledge/KnowledgeAgent
 import { VibeAgent } from "../agents/notUsedAgents/vibe/VibeAgent";
 import { ConversationState } from "../types/conversation";
 import logger from "../config/logger";
+import { getBouncerConfig } from "./bouncerService";
+import { ToneAgent } from "../agents/notUsedAgents/tone/ToneAgent";
 
 export class AgentService {
 	private knowledgeAgent: KnowledgeAgent;
 	private vibeAgent: VibeAgent;
+	private toneAgent: ToneAgent;
 
 	constructor() {
 		this.knowledgeAgent = new KnowledgeAgent();
 		this.vibeAgent = new VibeAgent();
+		this.toneAgent = new ToneAgent();
 	}
 
-	async evaluateResponse(answer: string, conversationState: ConversationState) {
+	async evaluateResponse(
+		answer: string,
+		conversationState: ConversationState,
+		projectId: string
+	) {
 		const conversationHistory = conversationState.history;
 		logger.info(
 			{ questionNumber: conversationHistory.length, answer },
@@ -35,40 +43,67 @@ export class AgentService {
 					vibeScore: 10,
 				};
 			}
+			const bouncerConfig = await getBouncerConfig(projectId);
+			this.knowledgeAgent.setBouncerConfig(bouncerConfig);
 			const questionNumber = conversationHistory.length;
 			logger.info(
 				{ questionNumber, conversationHistory, answer },
 				"Running evaluations"
 			);
 
+			if (questionNumber === 0) {
+				const firstQuestion = await this.knowledgeAgent.evaluateAnswer(
+					[],
+					answer
+				);
+				logger.info({ firstQuestion }, "Generated first question");
+
+				const modifiedFirstQuestion = await this.toneAgent.modifyTone(
+					firstQuestion.nextQuestion,
+					bouncerConfig.character_choice
+				);
+
+				logger.info(
+					{ modifiedFirstQuestion },
+					"Modified first question based on character tone"
+				);
+
+				return {
+					nextMessage: modifiedFirstQuestion,
+					decision: "pending",
+					shouldContinue: true,
+					conversationState: {
+						...conversationState,
+						history: [
+							{
+								question: modifiedFirstQuestion,
+								answer: null,
+							},
+						],
+					},
+					knowledgeScore: 0,
+					vibeScore: 0,
+				};
+			}
+
 			const [knowledgeEval, vibeEval] = await Promise.all([
 				this.knowledgeAgent.evaluateAnswer(conversationHistory, answer),
 				this.vibeAgent.evaluateAnswer(conversationHistory, answer),
 			]);
+			knowledgeEval.nextQuestion = await this.toneAgent.modifyTone(
+				knowledgeEval.nextQuestion,
+				bouncerConfig.character_choice
+			);
+			vibeEval.nextQuestion = await this.toneAgent.modifyTone(
+				vibeEval.nextQuestion,
+				bouncerConfig.character_choice
+			);
 
 			const knowledgeScore = knowledgeEval.score;
 			const vibeScore = vibeEval.score;
 			logger.info({ knowledgeEval, vibeEval }, "LLM evaluations complete.");
 
-			// **Check if the user has passed the evaluation**
-			const passed = knowledgeScore >= 6 && vibeScore >= 7;
-			logger.info({ passed, questionNumber }, "Pass status");
-
-			// **Determine if the user should continue**
-			let shouldContinue = false;
-			if (questionNumber < 3) {
-				shouldContinue = true;
-			} else if (questionNumber === 3) {
-				shouldContinue = knowledgeScore >= 4 && vibeScore >= 5;
-			} else if (questionNumber === 4) {
-				shouldContinue = knowledgeScore >= 5 && vibeScore >= 6;
-			} else if (questionNumber === 5) {
-				shouldContinue = false;
-			}
-			logger.info({ shouldContinue, questionNumber }, "Continue status");
-
-			// **Immediate failure condition**
-			if ((knowledgeScore <= 1 || vibeScore <= 1) && questionNumber > 0) {
+			if (knowledgeScore <= 1 || vibeScore <= 1) {
 				logger.info(
 					{ knowledgeScore, vibeScore },
 					"Immediate failure triggered"
@@ -76,13 +111,31 @@ export class AgentService {
 				return {
 					nextMessage: null,
 					decision: "failed",
-					knowledgeFeedback: knowledgeEval.feedback,
-					vibeFeedback: vibeEval.feedback,
 					shouldContinue: false,
-					conversationState: conversationState,
-					knowledgeScore,
-					vibeScore,
+					conversationState: {
+						...conversationState,
+						history: conversationHistory,
+					},
+					knowledgeScore: knowledgeScore,
+					vibeScore: vibeScore,
 				};
+			}
+
+			let passed = false;
+			let shouldContinue = true;
+
+			if (questionNumber > 5) {
+				shouldContinue = false;
+				passed = knowledgeScore >= 7 && vibeScore >= 8;
+			} else if (questionNumber >= 3) {
+				passed = knowledgeScore >= 6 && vibeScore >= 7;
+				shouldContinue = !passed;
+			} else if (questionNumber == 2) {
+				passed = knowledgeScore >= 5 && vibeScore >= 6;
+				shouldContinue = !passed;
+			} else {
+				passed = false;
+				shouldContinue = true;
 			}
 
 			if (conversationHistory.length > 0) {
@@ -128,13 +181,19 @@ export class AgentService {
 				};
 			}
 
+			const decision = passed
+				? "complete"
+				: shouldContinue
+				? "pending"
+				: "failed";
+
 			const result = {
 				nextMessage: passed
 					? null
 					: knowledgeEval.score > vibeEval.score
 					? vibeEval.nextQuestion
 					: knowledgeEval.nextQuestion,
-				decision: passed ? "complete" : "pending",
+				decision,
 				knowledgeFeedback: knowledgeEval.feedback,
 				vibeFeedback: vibeEval.feedback,
 				shouldContinue,

@@ -3,6 +3,7 @@ cache/
 out/
 broadcast/
 node_modules
+lib
 
 
 # Docs
