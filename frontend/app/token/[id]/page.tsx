@@ -58,7 +58,7 @@ import { toast } from "react-hot-toast";
 // Components
 // import Protected from "@/components/utils/Protected";
 
-const projectClient = new ProjectClient();
+const projectClient = new ProjectClient(process.env.NEXT_PUBLIC_API_URL);
 
 // Hardcoded display data
 const DISPLAY_DATA = {

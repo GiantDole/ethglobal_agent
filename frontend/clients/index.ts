@@ -1,8 +1,12 @@
 export class Client {
   url: string;
 
-  constructor(url: string) {
-    this.url = url.replace(/^https?:\/\/[^/]+/, '');
+  constructor(url?: string) {
+    this.url = url
+      ? url.endsWith("/")
+        ? url.slice(0, -1)
+        : url
+      : "http://localhost:8000";
   }
 
   async request(

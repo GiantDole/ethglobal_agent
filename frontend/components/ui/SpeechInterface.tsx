@@ -26,7 +26,9 @@ declare global {
   }
 }
 
-const interactionClient = new InteractionClient();
+const interactionClient = new InteractionClient(
+  process.env.NEXT_PUBLIC_API_URL,
+);
 
 function SpeechInterface() {
   const params = useParams();

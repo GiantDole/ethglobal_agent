@@ -13,7 +13,7 @@ import ConnectedBorder from "@/assets/header/connected_wallet.svg";
 // Clients
 import UserClient from "@/clients/User";
 
-const userClient = new UserClient();
+const userClient = new UserClient(process.env.NEXT_PUBLIC_API_URL);
 
 export const ConnectWallet = () => {
   const router = useRouter();

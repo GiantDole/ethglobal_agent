@@ -177,6 +177,7 @@ export const generateSignature = async (
   evmAddress: string,
   tokenContract: string
 ): Promise<{ signature: string; nonce: number; tokenAllocation: number }> => {
+  logger.info({ userId, projectId }, "Generating signature");
   // Retrieve the user's session from Redis.
   const sessionKey = `session:${userId}`;
   const sessionString = await redis.get(sessionKey);
@@ -185,11 +186,15 @@ export const generateSignature = async (
   }
   const sessionData: SessionData = JSON.parse(sessionString);
 
+  logger.info({ sessionData }, "Session data retrieved");
+
   // Retrieve the project-specific session using projectId.
   const projectSession = sessionData.projects[projectId];
   if (!projectSession) {
     throw new Error(`Project session for project ID ${projectId} not found.`);
   }
+
+  logger.info({ projectSession }, "Project session retrieved");
 
   // Retrieve tokenAllocation from the project session.
   const tokenAllocation = Math.floor(projectSession.tokenAllocation);
@@ -219,22 +224,30 @@ export const generateSignature = async (
     )
   );
 
+  logger.info({ messageHash }, "Message hash generated");
+
   // Ensure the admin key is set.
   const adminKey = process.env.EVM_ADMIN_KEY;
   if (!adminKey) {
     throw new Error("EVM_ADMIN_KEY not set in environment variables.");
   }
 
+  logger.info("Admin key retrieved");
+
   // Create a wallet instance with the admin private key.
   const wallet = new ethers.Wallet(adminKey);
   // Sign the hash. Convert the hex string into a Uint8Array before signing.
   const signature = await wallet.signMessage(ethers.getBytes(messageHash));
+
+  logger.info({ signature }, "Signature generated");
 
   // After signature generation, update the project session with the new signature.
   projectSession.signature = signature;
 
   // Save the updated session back to Redis, with an expiration of 180*60 seconds.
   await redis.set(sessionKey, JSON.stringify(sessionData), "EX", 180 * 60);
+
+  logger.info("Session updated with new signature");
 
   return {
     signature: signature,
