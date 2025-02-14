@@ -91,12 +91,12 @@ export default function Page() {
         </div>
       </div>
       <div className="relative container mx-auto z-[1]">
-        <div className="flex justify-between">
-          <Image src={Star} alt="Star" />
+        <div className="flex justify-center sm:justify-between">
+          <Image src={Star} alt="Star" className="hidden sm:block" />
           <Image src={Active} alt="Active" />
-          <Image src={Star} alt="Star" />
+          <Image src={Star} alt="Star" className="hidden sm:block" />
         </div>
-        <div className="flex flex-wrap gap-5 mt-5 justify-center lg:justify-start p-4">
+        <div className="flex flex-wrap gap-5 mt-5 justify-center lg:justify-center p-4">
           {activeTokens.map((token) => (
             <Link key={token.id} href={`/token/${token.id}`}>
               <div className="w-[240px] p-2 cursor-pointer">
@@ -157,12 +157,12 @@ export default function Page() {
       </div>
       <Image src={Orbit} alt="Orbit" className="ml-[20%] mt-12" />
       <div className="container mx-auto">
-        <div className="flex justify-between mt-[-72px]">
-          <Image src={Star} alt="Star" />
+        <div className="flex justify-center mt-[-72px] sm:justify-between">
+          <Image src={Star} alt="Star" className="hidden sm:block" />
           <Image src={Future} alt="Active" />
-          <Image src={Star} alt="Star" />
+          <Image src={Star} alt="Star" className="hidden sm:block" />
         </div>
-        <div className="flex flex-wrap gap-5 mt-5 justify-center lg:justify-start p-4">
+        <div className="flex flex-wrap gap-5 mt-5 justify-center lg:justify-center p-4">
           {futureTokens.map((token) => (
             <Link key={token.id} href={`/token/${token.id}`}>
               <div className="w-[240px] p-2 cursor-pointer border border-[#FF8585]">
