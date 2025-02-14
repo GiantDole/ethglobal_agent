@@ -142,7 +142,7 @@ const TokenSwap = ({
           nonce,
           signedMessage,
         ],
-        value: BigInt(parseEther(inputAmount) + parseEther("0.0001")),
+        value: BigInt(parseEther(inputAmount) + parseEther("0.001")),
       });
 
       const tx = await walletClient.writeContract(request);
