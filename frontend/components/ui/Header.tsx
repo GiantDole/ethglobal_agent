@@ -6,19 +6,21 @@ import { usePathname } from "next/navigation";
 
 // Components
 import { ConnectWallet } from "./ConnectWallet";
+import { Modal } from "./Modal";
 
 // Images
 import Logo from "@/assets/header/logo.svg";
-import Token from "@/assets/header/nav_token.svg";
-import About from "@/assets/header/nav_about.svg";
+import X from "@/assets/header/nav_x.svg";
 import Documentation from "@/assets/header/nav_documentation.svg";
 import Create from "@/assets/header/nav_create.svg";
+import GoToX from "@/assets/header/modal_gox.svg";
 
 export const Header = () => {
   const pathname = usePathname();
 
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -39,6 +41,23 @@ export const Header = () => {
           : "-translate-y-full"
       }`}
     >
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
+        <div className="my-6 px-4">
+          <h1 className="mb-4 text-center font-bold text-2xl">
+            <span className="text-[#FF8585]">Bouncer AI</span> is coming soon!
+          </h1>
+          <h3 className="font-bold">To join waitlist:</h3>
+          <ul>
+            <li className="list-disc ml-4">Follow us on X!</li>
+            <li className="list-disc ml-4">DM us on X!</li>
+          </ul>
+          <div className="flex justify-center mt-8">
+            <a href="https://x.com/bouncer_ai" target="_blank">
+              <Image src={GoToX} alt="" />
+            </a>
+          </div>
+        </div>
+      </Modal>
       <div className="flex gap-4 items-center lg:gap-16">
         <h1 className="text-2xl font-bold">
           <Link href="/">
@@ -48,16 +67,6 @@ export const Header = () => {
         <div>
           <ul className="hidden md:flex gap-4 lg:gap-16">
             <li>
-              <a href="#">
-                <Image src={Token} alt="Token" />
-              </a>
-            </li>
-            <li>
-              <a href="#">
-                <Image src={About} alt="About" />
-              </a>
-            </li>
-            <li>
               <a
                 href="https://github.com/GiantDole/ethglobal_agent/blob/main/README.md"
                 target="_blank"
@@ -66,9 +75,15 @@ export const Header = () => {
               </a>
             </li>
             <li>
-              <a href="#">
-                <Image src={Create} alt="Create" />
+              <a href="https://x.com/bouncer_ai" target="_blank">
+                <Image src={X} alt="X" />
               </a>
+            </li>
+            <li
+              className="hover:cursor-pointer"
+              onClick={() => setModalOpen(true)}
+            >
+              <Image src={Create} alt="Create" />
             </li>
           </ul>
         </div>
