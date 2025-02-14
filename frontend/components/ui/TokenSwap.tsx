@@ -79,17 +79,6 @@ const TokenSwap = ({
     fetchSignedMessage();
   }, [lastTransaction]);
 
-  useEffect(() => {
-    const calculateOutputAmount = async () => {
-      const outputAmount =
-        activeTab === "buy"
-          ? (Number(inputAmount) * ETHPrice) / tokenPrice
-          : (Number(inputAmount) * tokenPrice) / ETHPrice;
-      setOutputAmount(outputAmount.toString());
-    };
-    calculateOutputAmount();
-  }, [inputAmount, activeTab]);
-
   const publicClient = createPublicClient({
     chain: arbitrumSepolia,
     transport: http(
@@ -252,12 +241,6 @@ const TokenSwap = ({
       return true;
     }
 
-    if (Number(outputAmount) > tokenAllocation - tokenBalance) {
-      toast.error(
-        `You can buy maximum ${tokenAllocation - tokenBalance} ${tokenTicker}`,
-      );
-      return true;
-    }
     if (activeTab === "buy" && Number(inputAmount) > balance) {
       toast.error("You don't have enough balance");
       return true;
@@ -279,6 +262,45 @@ const TokenSwap = ({
       return true;
     }
     return false;
+  };
+
+  // Yeni hesaplama fonksiyonları
+  const handleInputChange = (value: string) => {
+    setInputAmount(value);
+    if (value === "") {
+      setOutputAmount("");
+      return;
+    }
+    const numValue = Number(value);
+    if (isNaN(numValue)) return;
+
+    let output;
+    if (activeTab === "buy") {
+      output = (numValue * ETHPrice) / tokenPrice;
+    } else {
+      output = (numValue * tokenPrice) / ETHPrice;
+    }
+    const roundedOutput = parseFloat(output.toFixed(6));
+    setOutputAmount(roundedOutput.toString());
+  };
+
+  const handleOutputChange = (value: string) => {
+    setOutputAmount(value);
+    if (value === "") {
+      setInputAmount("");
+      return;
+    }
+    const numValue = Number(value);
+    if (isNaN(numValue)) return;
+
+    let input;
+    if (activeTab === "buy") {
+      input = (numValue * tokenPrice) / ETHPrice;
+    } else {
+      input = (numValue * ETHPrice) / tokenPrice;
+    }
+    const roundedInput = parseFloat(input.toFixed(6));
+    setInputAmount(roundedInput.toString());
   };
 
   return (
@@ -341,7 +363,7 @@ const TokenSwap = ({
               step="any"
               placeholder="0.0"
               value={inputAmount}
-              onChange={(e) => setInputAmount(e.target.value)}
+              onChange={(e) => handleInputChange(e.target.value)}
               className="bg-transparent text-white text-xl w-full focus:outline-none"
             />
             <button className="bg-[#1A1A1A] px-4 py-2 rounded-lg flex items-center gap-2">
@@ -368,15 +390,8 @@ const TokenSwap = ({
             <input
               type="number"
               placeholder="0.0"
-              value={
-                inputAmount
-                  ? parseFloat(outputAmount)
-                      .toFixed(6)
-                      .replace(/\.?0+$/, "") // Ondalık kısımdaki gereksiz sıfırları kaldırır
-                  : ""
-              }
-              disabled
-              onChange={(e) => setOutputAmount(e.target.value)}
+              value={outputAmount}
+              onChange={(e) => handleOutputChange(e.target.value)}
               className="bg-transparent text-white text-xl w-full focus:outline-none"
             />
             <button className="bg-[#1A1A1A] px-4 py-2 rounded-lg flex items-center gap-2">
