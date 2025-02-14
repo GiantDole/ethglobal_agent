@@ -14,8 +14,9 @@ export class ToneAgent {
 
 	async modifyTone(question: string, characterChoice: string) {
 		const prompt = `You are an expert at modifying the tone of a question while keeping its core meaning intact.
-		Adjust the question's tone to match the characteristics of a '${characterChoice}' persona while preserving its core meaning.
-		Ensure the modified question is concise and remains in a single sentence.`;
+		Adjust the question's tone while preserving its core meaning. Ensure the modified question is concise and the meaning is not altered. 
+		Adjust solely the *tone* of the question to be as follows:
+		'${characterChoice}'`;
 
 		const response: any = await this.model.invoke([
 			new SystemMessage(prompt),
