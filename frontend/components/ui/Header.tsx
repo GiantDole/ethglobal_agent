@@ -10,8 +10,8 @@ import { Modal } from "./Modal";
 
 // Images
 import Logo from "@/assets/header/logo.svg";
-import X from "@/assets/header/nav_x.svg";
-import Documentation from "@/assets/header/nav_documentation.svg";
+import XLogo from "@/assets/header/nav_x_logo.svg";
+import About from "@/assets/header/nav_about.svg";
 import Create from "@/assets/header/nav_create.svg";
 import GoToX from "@/assets/header/modal_gox.svg";
 
@@ -71,12 +71,7 @@ export const Header = () => {
                 href="https://github.com/GiantDole/ethglobal_agent/blob/main/README.md"
                 target="_blank"
               >
-                <Image src={Documentation} alt="Documentation" />
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/bouncer_ai" target="_blank">
-                <Image src={X} alt="X" />
+                <Image src={About} alt="About" />
               </a>
             </li>
             <li
@@ -84,6 +79,11 @@ export const Header = () => {
               onClick={() => setModalOpen(true)}
             >
               <Image src={Create} alt="Create" />
+            </li>
+            <li>
+              <a href="https://x.com/bouncer_ai" target="_blank">
+                <Image src={XLogo} alt="X" height={24} width={24} />
+              </a>
             </li>
           </ul>
         </div>
