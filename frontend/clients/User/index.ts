@@ -1,9 +1,8 @@
 import { Client } from "..";
 
 class UserClient extends Client {
-  constructor(url?: string) {
-    super(url);
-    this.url = `${this.url}/api/user`;
+  constructor() {
+    super('/api/user');
   }
 
   async authenticate() {

@@ -1,3 +1,5 @@
 frontend/assets/.DS_Store
 
 images
+
+token_tracker/.env

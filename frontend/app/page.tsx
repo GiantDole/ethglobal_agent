@@ -32,7 +32,7 @@ type Token = {
   exclusivity: number;
 };
 
-const projectClient = new ProjectClient(process.env.NEXT_PUBLIC_API_URL);
+const projectClient = new ProjectClient();
 
 export default function Page() {
   const [tokens, setTokens] = useState<Token[]>([]);

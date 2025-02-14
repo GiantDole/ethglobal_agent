@@ -58,7 +58,7 @@ import { toast } from "react-hot-toast";
 // Components
 // import Protected from "@/components/utils/Protected";
 
-const projectClient = new ProjectClient(process.env.NEXT_PUBLIC_API_URL);
+const projectClient = new ProjectClient();
 
 // Hardcoded display data
 const DISPLAY_DATA = {
@@ -224,7 +224,7 @@ function TokenDetail() {
             Congrats &#127881;
           </h1>
           <p>
-            You are eligible to buy {eligibleAmount} {data.name} tokens.
+            The bouncer has allocated {eligibleAmount} {data.name} tokens.
           </p>
         </div>
       </Modal>
